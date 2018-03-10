@@ -1,0 +1,70 @@
+// ------------------------------------------------------
+//
+
+
+#include <QCoreApplication>
+#include <spirpi.h>
+#include <string>
+#include <iostream>
+#include <time.h>
+#include <unistd.h>
+#include <Logger/stdlogger.h>
+
+using namespace std;
+
+
+static int channel = 0;
+static int num =1;
+
+
+/* parse arguments */
+int parse_args(int argc, char *argv[]){
+
+    if (argc >=2) channel = atoi(argv[1]);
+    if (argc >=3) num = atoi(argv[2]);
+
+    return 0;
+}
+
+
+
+int main(int argc, char *argv[])
+{
+    //QCoreApplication a(argc, argv);
+
+    if (parse_args(argc,argv)!=0){
+         cout << "Usage: command <channel>(opt) <num>(opt)" << endl;
+    }
+
+    unsigned int speed = (unsigned int)(1000000.0 * 400.0/250.0);
+    SPIRPi spi;
+    SPIConfig_t  config = {SPI_RPI_CS0_FILENAME,speed,16,0};
+
+    StdLogger logger;
+
+    uint8_t buf[5];
+    buf[0] = 0x00;
+    buf[1] = 0x02;
+
+
+    if (spi.openInterface((void *)&config) == -1){
+        cout << "Couldn't open interface!" << endl;
+        return 0;
+    }
+
+    int success = spi.writeMulti(0,buf,2);
+
+    buf[0] = 0x40;
+    buf[1] = 0xFF;
+    spi.writeMulti(0,buf,2);
+
+
+    if (success == -1){
+        cout << "Error executing SPI!" << endl;
+        return 0;
+    }
+
+    cout << "Success!" << endl;
+
+    return 0;
+}
