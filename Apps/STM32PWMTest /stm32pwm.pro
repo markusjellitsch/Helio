@@ -4,7 +4,7 @@ QT -= gui
 CONFIG += c++11
 INSTALLS += target
 target.path = /home/pi/Application
-TARGET = stm32test
+TARGET = stm32pwm
 CONFIG += console
 CONFIG -= app_bundle
 
@@ -34,4 +34,5 @@ HEADERS += \
     ../../Sources/Interface/uart_rpi.h \
     ../../Sources/Slaves/stm32_vldisco.h \
     ../../Sources/Modbus/modbusrtu.h \
-    ../../Sources/Modbus/modbusholdingregister.h
+    ../../Sources/Modbus/modbusholdingregister.h \
+    ../../Sources/Modbus/holdingregister.h

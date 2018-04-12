@@ -4,7 +4,7 @@ QT -= gui
 CONFIG += c++11
 INSTALLS += target
 target.path = /home/pi/Application
-TARGET = stm32test
+TARGET = smtunnel
 CONFIG += console
 CONFIG -= app_bundle
 
@@ -15,7 +15,7 @@ SOURCES += main.cpp \
     ../../Sources/Interface/uart_rpi.cpp \
     ../../Sources/Slaves/stm32_vldisco.cpp \
     ../../Sources/Modbus/modbusrtu.cpp \
-    ../../Sources/Modbus/holdingregister.cpp
+    ../../Sources/Modbus/modbusholdingregister.cpp
 
 INCLUDEPATH += /home/user/raspi/sysroot/usr/include \
             /home/user/raspi/sysroot/usr/include \

@@ -13,6 +13,7 @@
 #include "spirpi.h"
 #include "Modbus/modbusrtu.h"
 #include "Modbus/holdingregister.h"
+#include "Logger/logger.h"
 #include <ctime>
 
 
@@ -21,6 +22,8 @@
 #define RTU_NUM_HOLDING_REGISTER    20
 
 #define RTU_SYS_BOOT_SEQUENCE       0x4711
+
+#define RTU_DRY_TIMEOUT_MS          10
 
 #define RTU_SYS_BASE_REG            (MODBUS_HOLDING_REG_4001)
 #define RTU_SYS_CR1					(RTU_SYS_BASE_REG)
@@ -37,7 +40,7 @@
 #define RTU_PWM_DUT                 (RTU_PWM_BASE + 5)					// period register
 
 #define RTU_CNT_BASE 				(MODBUS_HOLDING_REG_4012)
-#define RTU_CNT_CR 					(RTU_CNT_BASE) 					     // control register
+#define RTU_CNT_PRD 					(RTU_CNT_BASE) 					     // control register
 #define RTU_CNT_SR                  (RTU_CNT_BASE + 1)					// status register
 #define RTU_CNT_CH1                 (RTU_CNT_BASE + 2)					// period register
 #define RTU_CNT_CH2                 (RTU_CNT_BASE + 3)					// period register
@@ -59,6 +62,11 @@
 #define RTU_PWM_SR_CH3_Msk          (0x01 << 2)
 #define RTU_PWM_SR_CH4_Msk          (0x01 << 3)
 
+#define RTU_CNT_SR_CH1_Msk          (0x01 << 0)
+#define RTU_CNT_SR_CH2_Msk          (0x01 << 1)
+#define RTU_CNT_SR_CH3_Msk          (0x01 << 2)
+#define RTU_CNT_SR_CH4_Msk          (0x01 << 3)
+
 
 #define RTU_REG_NAME_SYS_CR1        "SYS_CR1"
 #define RTU_REG_NAME_SYS_EN         "SYS_EN"
@@ -70,7 +78,7 @@
 #define RTU_REG_NAME_PWM_CNT        "PWM_CNT"
 #define RTU_REG_NAME_PWM_PSC        "PWM_PSC"
 #define RTU_REG_NAME_PWM_DUT        "PWM_DUT"
-#define RTU_REG_NAME_CNT_CR         "CNT_CR"
+#define RTU_REG_NAME_CNT_PRD         "CNT_PRD"
 #define RTU_REG_NAME_CNT_SR         "CNT_SR"
 #define RTU_REG_NAME_CNT_CH1        "CNT_CH1"
 #define RTU_REG_NAME_CNT_CH2        "CNT_CH2"
@@ -88,7 +96,7 @@
 #define RTU_REG_DESC_PWM_CNT        "Set count of PWM pulses"
 #define RTU_REG_DESC_PWM_PSC        "Set resolution of PWM"
 #define RTU_REG_DESC_PWM_DUT        "Set duty cycle"
-#define RTU_REG_DESC_CNT_CR         "Enable Frequency Counter channels"
+#define RTU_REG_DESC_CNT_PRD        "Measured period of a specified channel"
 #define RTU_REG_DESC_CNT_SR         "Information about frequency channels finished"
 #define RTU_REG_DESC_CNT_CH1        "Set counter value for channel 1"
 #define RTU_REG_DESC_CNT_CH2        "Set counter value for channel 2"
@@ -103,17 +111,32 @@
 #define RTU_PWM_CHANNEl3            RTU_SYS_EN_PWM3_Msk
 #define RTU_PWM_CHANNEl4            RTU_SYS_EN_PWM4_Msk
 
+#define RTU_CNT_CHANNEL1            (RTU_SYS_EN_CNT1_Msk)
+#define RTU_CNT_CHANNEL2            (RTU_SYS_EN_CNT2_Msk)
+#define RTU_CNT_CHANNEL3            (RTU_SYS_EN_CNT3_Msk)
+#define RTU_CNT_CHANNEL4            (RTU_SYS_EN_CNT4_Msk)
+
 #define RTU_ERROR_SPI_WRITE_FAILED      -2
 #define RTU_ERROR_SPI_READ_FAILED       -3
 #define RTU_ERROR_SPI_DRY_TIMEOUT       -4
 #define RTU_ERROR_NULLPTR               -5
 #define RTU_ERROR_INVALID_PACKET        -6
+#define RTU_ERROR_COMPARISON_FAILED     -7
 
 
-#define RTU_ERROR_COMPARISON_FAILED -4
-#define RTU_ERROR_COMPARISON_FAILED -4
-#define RTU_ERROR_COMPARISON_FAILED -4
-#define RTU_ERROR_COMPARISON_FAILED -4
+#define RTU_ERROR                         1
+#define RTU_NOTE                          2
+
+
+
+
+#define RTUASSERT(x)                                                        \
+{                                                                           \
+    if ((x) != RTU_OK){                                                     \
+        assertHandler(x,__FILE__,__LINE__);                                 \
+        return x;                                                           \
+    }                                                                       \
+}
 
 
 typedef struct {
@@ -124,26 +147,22 @@ typedef struct {
 }RTUStatistic;
 
 
-#define RTUASSERT(x)                                                                                                \
-{                                                                                                                   \
-    if (x != RTU_OK){                                                                                               \
-       std::cout << "ASSERT FAILED IN " << __FILE__ << " IN LINE"  << __LINE__ << ". ERROR CODE:" << x << "." << endl;      \
-       return x;                                                                                                    \
-    }                                                                                                               \
-                                                                                                                    \
-}
-
-
-
 class STM32_VLDISCO
 {
 public:
 
     /* constructor */
     STM32_VLDISCO(SPIRPi * interface);
+    ~STM32_VLDISCO();
 
     /* connect to rtu */
     int connect();
+
+    /* run a test */
+    int testPerformance(unsigned int const  readCount, unsigned int const writeCount);
+
+    /* set logger */
+    int setLogger(Logger * const logger);
 
     /* read rtu internal registers */
     int readSingleRegister(uint8_t const reg,int16_t * value);
@@ -163,7 +182,8 @@ public:
     int setCaptureResolution(uint16_t const resolution);
     int startCapture(uint8_t const channel);
     int stopCapture(uint8_t const channel);
-    int getCapturedFrequency(uint8_t const channel);
+    bool isCaptureFinished(uint8_t const channel);
+    int getFrequency(uint8_t const channel,uint16_t * value);
 
     /* return member register */
     int16_t getRegister(uint8_t const reg) const;
@@ -193,19 +213,29 @@ public:
     int printStatistic() const;
 
     /* Stopwatch to measure time */
-    int startStopWatch();
-    double stopStopWatch();
+    int startTimer();
+    double stopTimer();
+    double getTime();
+    double getElapsed();
+    void delayMilliseconds(uint16_t const milliseconds);
 
 private:
 
     /* spi transaction to read data from rtu */
-    int transaction(uint8_t * txData, unsigned int txLen,uint8_t * rxData);
+    int transaction(uint8_t * txData, unsigned int txLen,uint8_t * rxData,unsigned int * rxLen);
     int transaction(ModbusFrame_t & send, ModbusFrame_t * receive);
 
-    ModbusHoldingRegister * mHoldingRegisters;
+    /* log events */
+    int log(uint8_t const logLevel, std::string const & text);
+
+    /* assert handler */
+    int assertHandler(int errorCode,std::string const & file, int line);
+
+    ModbusHoldingRegister * mHoldingRegisters=nullptr;
     RTUStatistic mStatistic;
-    SPIRPi * mSPIInterface;
-    clock_t mStopwatchCounter;
+    SPIRPi * mSPIInterface=nullptr;
+    double mStopwatchCounter=-1;
+    Logger * mLogger=nullptr;
 };
 
 #endif // STM32_VLDISCO_H

@@ -10,6 +10,7 @@
 #include "stm32_vldisco.h"
 #include "wiringPi.h"
 #include "Modbus/holdingregister.h"
+#include "Logger/logger.h"
 #include "Modbus/modbusrtu.h"
 #include <string>
 #include <iostream>
@@ -45,7 +46,7 @@ STM32_VLDISCO::STM32_VLDISCO(SPIRPi * interface){
     mHoldingRegisters->setDescription(RTU_PWM_PRD,RTU_REG_DESC_PWM_PRD);
     mHoldingRegisters->setDescription(RTU_PWM_PSC,RTU_REG_DESC_PWM_PSC);
     mHoldingRegisters->setDescription(RTU_PWM_DUT,RTU_REG_DESC_PWM_DUT);
-    mHoldingRegisters->setDescription(RTU_CNT_CR,RTU_REG_DESC_CNT_CR);
+    mHoldingRegisters->setDescription(RTU_CNT_PRD,RTU_REG_DESC_CNT_PRD);
     mHoldingRegisters->setDescription(RTU_CNT_SR,RTU_REG_DESC_CNT_SR);
     mHoldingRegisters->setDescription(RTU_CNT_CH1,RTU_REG_DESC_CNT_CH1);
     mHoldingRegisters->setDescription(RTU_CNT_CH2,RTU_REG_DESC_CNT_CH2);
@@ -64,7 +65,7 @@ STM32_VLDISCO::STM32_VLDISCO(SPIRPi * interface){
     mHoldingRegisters->setName(RTU_PWM_PRD,RTU_REG_NAME_PWM_PRD);
     mHoldingRegisters->setName(RTU_PWM_PSC,RTU_REG_NAME_PWM_PSC);
     mHoldingRegisters->setName(RTU_PWM_DUT,RTU_REG_NAME_PWM_DUT);
-    mHoldingRegisters->setName(RTU_CNT_CR,RTU_REG_NAME_CNT_CR);
+    mHoldingRegisters->setName(RTU_CNT_PRD,RTU_REG_NAME_CNT_PRD);
     mHoldingRegisters->setName(RTU_CNT_SR,RTU_REG_NAME_CNT_SR);
     mHoldingRegisters->setName(RTU_CNT_CH1,RTU_REG_NAME_CNT_CH1);
     mHoldingRegisters->setName(RTU_CNT_CH2,RTU_REG_NAME_CNT_CH2);
@@ -77,6 +78,15 @@ STM32_VLDISCO::STM32_VLDISCO(SPIRPi * interface){
     mStatistic.timeoutsOccured = 0;
     mStatistic.responsesReceived = 0;
 
+    mStopwatchCounter = -1;
+
+    mLogger = nullptr;
+}
+
+STM32_VLDISCO::~STM32_VLDISCO(){
+
+    delete mHoldingRegisters;
+    mLogger = nullptr;
     mStopwatchCounter = -1;
 }
 
@@ -95,15 +105,86 @@ int STM32_VLDISCO::connect(){
     RTUASSERT(writeSingleRegister(RTU_SYS_EN,0));
     RTUASSERT(writeSingleRegister(RTU_PWM_SR,0));
 
+    log(RTU_NOTE,"RTU initialization successful!");
+
     return RTU_OK;
 }
+
+/*---------------------------------------------------------------------------
+ * Testing SPI performance between RTU and Raspberry Pi
+ *--------------------------------------------------------------------------*/
+ int STM32_VLDISCO::testPerformance(unsigned int const  readCount, unsigned int const writeCount){
+
+     int error = 0;
+     int16_t value = 0;
+
+     // testing command read holding
+     log(RTU_NOTE,"Reading Holding Register Test!");
+     for (unsigned int i = 0; i < readCount;i++){
+        error = readSingleRegister(RTU_SYS_BOOT,&value);
+        RTUASSERT(error);
+        compareRegisterValue(RTU_SYS_BOOT,RTU_SYS_BOOT_SEQUENCE,false);
+
+     }
+
+    // testing command write holding
+    log(RTU_NOTE,"Write Holding Register Test!");
+    for (unsigned int i = 0;i<writeCount;i++){
+         error = writeSingleRegister(RTU_SYS_CR1,0);
+         RTUASSERT(error);
+     }
+
+    // print statistic
+    printStatistic();
+
+    return RTU_OK;
+ }
+
+/*---------------------------------------------------------------------------
+ * Set Logger for logging events
+ *--------------------------------------------------------------------------*/
+int STM32_VLDISCO::setLogger(Logger * const logger){
+
+    mLogger = logger;
+    RTUASSERT(mLogger == nullptr);
+
+    return RTU_OK;
+}
+
+/*---------------------------------------------------------------------------
+ * Log event (e.g to std:out or a file)
+ *--------------------------------------------------------------------------*/
+int STM32_VLDISCO::log(uint8_t const logLevel,std::string const & text){
+
+
+    if (mLogger == nullptr) return RTU_ERROR_NULLPTR;
+
+    switch (logLevel){
+
+        case RTU_ERROR:
+            mLogger->Error(text);
+            break;
+
+         case RTU_NOTE:
+             mLogger->Note(text);
+             break;
+
+         default:
+             break;
+
+     }
+
+
+    return RTU_OK;
+}
+
 
 /*---------------------------------------------------------------------------
  * SPI transaction to the RTU. This function transmits specified data and
  * return slave response back. This is the base function for a communication
  * between Raspberry Pi and RTU.
  *--------------------------------------------------------------------------*/
-int STM32_VLDISCO::transaction(uint8_t * txData, unsigned int txLen,uint8_t * rxData){
+int STM32_VLDISCO::transaction(uint8_t * txData, unsigned int txLen,uint8_t * rxData,unsigned int * rxLen){
 
 
     // set slave select low
@@ -113,31 +194,41 @@ int STM32_VLDISCO::transaction(uint8_t * txData, unsigned int txLen,uint8_t * rx
     uint8_t len_byte =  (uint8_t)(txLen);
     int error = mSPIInterface->writeMulti(0,&len_byte,1);
     if (error != I_OK){
+        log(RTU_ERROR,"Writing to SPI failed!");
         return RTU_ERROR_SPI_WRITE_FAILED;
     }
 
     // transmit data
     error = mSPIInterface->writeMulti(0,txData,txLen);
     if (error != I_OK){
+        log(RTU_ERROR,"Writing to SPI failed!");
         return RTU_ERROR_SPI_WRITE_FAILED;
     }
 
      mStatistic.commandsSent++;
 
-    unsigned int count = 100000;
+    bool timeout = 0;
+
+    // start timer
+    uint64_t start = getTime();
 
     // wait for stm32 to raise DATA READY line
     while (digitalRead(SPI_SLAVE_DRY_PIN)!=1){
-       if (--count==0) break;
+
+        double elapsed = (getTime()-start)/1000000;
+        if (elapsed >= RTU_DRY_TIMEOUT_MS) {
+           timeout = true;
+           break;
+        }
     }
 
 
     // on timeout reset CS line & return
-    if (count==0){
-
+    if (timeout){
+        log(RTU_ERROR,"DRY timeout occured!");
         // reset slave select
         digitalWrite(SPI_SLAVE_CS_PIN,1);
-        mStatistic.timeoutsOccured = 0;
+        mStatistic.timeoutsOccured++;
         return RTU_ERROR_SPI_DRY_TIMEOUT;
    }
 
@@ -145,6 +236,7 @@ int STM32_VLDISCO::transaction(uint8_t * txData, unsigned int txLen,uint8_t * rx
     error =  mSPIInterface->readMulti(0,rxData,1);
     if (error != I_OK){
         mStatistic.errorsOccured++;
+        log(RTU_ERROR,"Reading from SPI (first byte) failed!");
         return RTU_ERROR_SPI_READ_FAILED;
     }
 
@@ -153,6 +245,7 @@ int STM32_VLDISCO::transaction(uint8_t * txData, unsigned int txLen,uint8_t * rx
     error =  mSPIInterface->readMulti(0,rxData,len);
     if (error != I_OK){
         mStatistic.errorsOccured++;
+        log(RTU_ERROR,"Reading from SPI (payload bytes) failed!");
         return RTU_ERROR_SPI_READ_FAILED;
     }
 
@@ -160,8 +253,12 @@ int STM32_VLDISCO::transaction(uint8_t * txData, unsigned int txLen,uint8_t * rx
     // reset slave select
     digitalWrite(SPI_SLAVE_CS_PIN,1);
 
+    log(RTU_NOTE,"SPI transaction OK!");
+
+    *rxLen = len;
+
     // return total data read
-    return len;
+    return RTU_OK;
 }
 
 /*---------------------------------------------------------------------------
@@ -191,11 +288,11 @@ int STM32_VLDISCO::transaction(ModbusFrame_t & send, ModbusFrame_t * receive){
 
        if (receive == nullptr) return RTU_ERROR_NULLPTR;
 
-       int error = transaction(dataSend,index,dataReceive);
+       unsigned int numBytes = 0;
+
+       int error = transaction(dataSend,index,dataReceive,&numBytes);
        RTUASSERT(error);
 
-       // error contains number of bytes
-       int numBytes = error;
 
        ModbusRTU response;
        response.setPayloadSize(receive->dataLen);
@@ -208,6 +305,8 @@ int STM32_VLDISCO::transaction(ModbusFrame_t & send, ModbusFrame_t * receive){
        }
 
        mStatistic.errorsOccured++;
+
+       log(RTU_ERROR,"Invalid Response Packet received!");
 
        return RTU_ERROR_INVALID_PACKET;
 }
@@ -235,14 +334,15 @@ int STM32_VLDISCO::writeSingleRegister(uint8_t const reg, int16_t const value){
 
      int error = transaction(sendFrame,&responseFrame);
 
-    #ifdef DEBUG
-        if (error == RTU_OK){
-            cout << "Writing to " << RTU_REG_NAME_PWM_PSC << " OK!" << endl;
-        }
-        else {
-            cout << "Writing to " << RTU_REG_NAME_PWM_PSC << " NOK!" << endl;
-        }
-    #endif
+    string text = "Write Single Register " + to_string(reg);
+
+    if (error == RTU_OK){
+        log(RTU_NOTE,text + " OK!");
+    }
+    else {
+        log(RTU_ERROR,text + + " NOK!");
+    }
+
 
      return error;
  }
@@ -266,6 +366,8 @@ int STM32_VLDISCO::readSingleRegister(uint8_t const reg,int16_t * value){
      // create spi frame
      ModbusFrame_t sendFrame = modbus.createFrame(RTU_ADDRESS,MODBUS_FUNC_READHOLDING,data,cNumBytes);
 
+     string text = "Reading Single Register " + reg;
+
      int error = transaction(sendFrame,&responseFrame);
      if (error == RTU_OK){
 
@@ -273,7 +375,11 @@ int STM32_VLDISCO::readSingleRegister(uint8_t const reg,int16_t * value){
 
          // update internal holding reg
          mHoldingRegisters->setValue(reg,*value);
+
+         log(RTU_NOTE,text + " OK!");
+
      }
+     else  log(RTU_ERROR,text + " NOK!");
 
      return error;
 }
@@ -298,12 +404,17 @@ int STM32_VLDISCO::readSingleRegister(uint8_t const reg,int16_t * value){
 
      int error = transaction(sendFrame,&responseFrame);
 
+     string text = "Reading Multi Register " + num;
+
      if (error == RTU_OK){
 
          for (int i = 0; i<num;i++){
              holdings->setValue(reg+i,(int16_t)(responseFrame.data[2*i+1]<< 8) | responseFrame.data[2*i+2]);
          }
+
+         log(RTU_NOTE,text + " OK!");
      }
+     else log(RTU_ERROR,text + " NOK!");
 
      return error;
  }
@@ -351,12 +462,14 @@ int STM32_VLDISCO::resetRegisters(){
         if (error != RTU_OK){
             // IGNORE ERRORS!
         }
+        cout << i << endl;
     }
 
-    // after reset update
-    error = updateRegisters();
 
-    return error;
+   // after reset update
+   error = updateRegisters();
+
+   return error;
 }
 
 
@@ -482,7 +595,9 @@ int STM32_VLDISCO::compareRegisterBit(uint8_t const reg, uint16_t const bit,bool
     // get bit status
     bool isSet = ((tmp & bit) == bit);
 
-    if (isSet == value) return RTU_OK;
+    if (isSet == value) {
+        return RTU_OK;
+     }
 
     return RTU_ERROR_COMPARISON_FAILED;
 }
@@ -516,30 +631,21 @@ int STM32_VLDISCO::compareZero(uint8_t const reg, uint16_t const bit){
     error = clearBit(RTU_SYS_EN,channel);
     RTUASSERT(error);
 
+
     error = writeSingleRegister(RTU_PWM_PSC,24);
     RTUASSERT(error);
-
-    cout << "Writing to " << RTU_REG_NAME_PWM_PSC << " OK!" << endl;
 
     error = writeSingleRegister(RTU_PWM_PRD,period);
     RTUASSERT(error);
 
-    cout << "Writing to " << RTU_REG_NAME_PWM_PRD << " OK!" << endl;
-
     error = writeSingleRegister(RTU_PWM_DUT,(uint16_t)duty);
     RTUASSERT(error);
-
-    cout << "Writing to " << RTU_REG_NAME_PWM_DUT << " OK!" << endl;
 
     error = setBit(RTU_SYS_EN,channel);
     RTUASSERT(error);
 
-    cout << "Writing to " << RTU_REG_NAME_SYS_EN << " OK!" << endl;
-
     error = setBit(RTU_PWM_CR,0);
     RTUASSERT(error);
-
-    cout << "Writing to " << RTU_REG_NAME_PWM_CR << " OK!" << endl;
 
     return RTU_OK;
  }
@@ -578,6 +684,92 @@ int STM32_VLDISCO::compareZero(uint8_t const reg, uint16_t const bit){
      return false;
  }
 
+ int STM32_VLDISCO::setCaptureCount(uint8_t const channel, uint16_t const value){
+
+    int error = -1;
+
+    switch (channel){
+
+        case RTU_CNT_CHANNEL1:
+            error = writeSingleRegister(RTU_CNT_CH1,value);
+            break;
+
+        case RTU_CNT_CHANNEL2:
+            error = writeSingleRegister(RTU_CNT_CH2,value);
+            break;
+
+        case RTU_CNT_CHANNEL3:
+            error = writeSingleRegister(RTU_CNT_CH3,value);
+            break;
+
+        case RTU_CNT_CHANNEL4:
+            error = writeSingleRegister(RTU_CNT_CH4,value);
+            break;
+
+        default:
+            break;
+    }
+
+    RTUASSERT(error);
+
+    return RTU_OK;
+ }
+
+ int STM32_VLDISCO::setCaptureResolution(uint16_t const resolution){
+
+     int error = writeSingleRegister(RTU_CNT_RES,resolution);
+     RTUASSERT(error);
+
+     return RTU_OK;
+ }
+
+int STM32_VLDISCO::startCapture(uint8_t const channel){
+
+    int error = setBit(RTU_SYS_EN,channel);
+    RTUASSERT(error);
+
+    error = compareSet(RTU_SYS_EN,channel);
+    RTUASSERT(error);
+
+    return RTU_OK;
+}
+
+int STM32_VLDISCO::stopCapture(uint8_t const channel){
+
+    int error = clearBit(RTU_SYS_EN,channel);
+    RTUASSERT(error);
+
+    return RTU_OK;
+}
+
+bool STM32_VLDISCO::isCaptureFinished(uint8_t const channel){
+
+    int error = writeSingleRegister(RTU_CNT_SR,channel>>4);
+    if (error != RTU_OK) return false;
+
+    error = compareZero(RTU_CNT_SR,channel>>4);
+    if (error != RTU_OK) return false;
+
+    return true;
+}
+
+int STM32_VLDISCO::getFrequency(uint8_t const channel,uint16_t * value){
+
+    if (value == nullptr) return RTU_ERROR_NULLPTR;
+
+    // writing to status register will wr
+    int error = writeSingleRegister(RTU_CNT_PRD,channel>>4);
+    RTUASSERT(error);
+
+    int16_t period = 0;
+    error = readSingleRegister(RTU_CNT_PRD,&period);
+    RTUASSERT(error);
+
+    // calculate frequency
+    *value = period;
+    return RTU_OK;
+}
+
  /*---------------------------------------------------------------------------
   * Return Statistic
   *--------------------------------------------------------------------------*/
@@ -590,15 +782,15 @@ int STM32_VLDISCO::compareZero(uint8_t const reg, uint16_t const bit){
   *--------------------------------------------------------------------------*/
  int STM32_VLDISCO::printStatistic() const{
 
-     cout << setw(35) << setfill('-') << "-" << endl;
+     cout << setw(35) << setfill('-') << "-" << setfill(' ')<< endl;
      cout << setw(35) << "RTU Statistic" << endl;
-     cout << setw(35) << setfill('-') << "-" << endl;
+     cout << setw(35) << setfill('-') << "-" << setfill(' ') << endl;
 
-     cout << setw(30) << "SPI Ppackets sent" << ":" << mStatistic.commandsSent << endl;
+     cout << setw(30) << "Modbus packets sent" << ":" << mStatistic.commandsSent << endl;
      cout << setw(30) << "Timouts occured" << ":" << mStatistic.timeoutsOccured << endl;
      cout << setw(30) << "Modbus reponses received" << ":" << mStatistic.responsesReceived << endl;
      cout << setw(30) << "Modbus errors received" << ":" << mStatistic.errorsOccured << endl;
-
+     cout << setw(30) << "Error rate (%):" << ((double)mStatistic.errorsOccured +(double)mStatistic.timeoutsOccured) / (double)mStatistic.commandsSent * 100 << endl;
      return RTU_OK;
  }
 
@@ -606,9 +798,9 @@ int STM32_VLDISCO::compareZero(uint8_t const reg, uint16_t const bit){
  /*---------------------------------------------------------------------------
   * Start stopwatch
   *--------------------------------------------------------------------------*/
- int STM32_VLDISCO::startStopWatch(){
+ int STM32_VLDISCO::startTimer(){
 
-     mStopwatchCounter = clock();
+     mStopwatchCounter = getTime();
 
      return RTU_OK;
  }
@@ -616,19 +808,68 @@ int STM32_VLDISCO::compareZero(uint8_t const reg, uint16_t const bit){
  /*---------------------------------------------------------------------------
   * Start stopwatch
   *--------------------------------------------------------------------------*/
- double STM32_VLDISCO::stopStopWatch(){
+ double STM32_VLDISCO::stopTimer(){
 
-     if (mStopwatchCounter == -1){
-            return -1.0;
+
+     if (mStopwatchCounter == 0){
+            return 0;
      }
 
-     // calculate elapsed time
-     clock_t elapsed = clock() - mStopwatchCounter;
 
-     mStopwatchCounter = -1;
+     double elapsed = getElapsed();
 
-     return (static_cast<double>(elapsed) / static_cast<double>(CLOCKS_PER_SEC));
+     mStopwatchCounter = 0;
+
+     return (elapsed);
  }
+
+ /*---------------------------------------------------------------------------
+  * Get stopwatch time
+  *--------------------------------------------------------------------------*/
+ double STM32_VLDISCO::getTime(){
+
+     struct timespec ts;
+     clock_gettime(CLOCK_MONOTONIC,&ts);
+
+
+     // calculate elapsed time
+     uint64_t now = (uint64_t)ts.tv_sec * 1000000000U +(uint64_t)ts.tv_nsec;
+
+     return (double)now;
+ }
+
+ /*---------------------------------------------------------------------------
+  * Get elapsed time
+  *--------------------------------------------------------------------------*/
+ double STM32_VLDISCO::getElapsed(){
+
+     // calculate elapsed time
+     uint64_t elapsed = (getTime() - mStopwatchCounter) / 1000000;
+     return elapsed;
+ }
+
+ void STM32_VLDISCO::delayMilliseconds(uint16_t const milliseconds){
+
+     double start = getTime();
+     double elapsed = 0;
+
+     while (elapsed <= milliseconds){
+         elapsed = (getTime() - start) / 1000000;
+     }
+ }
+
+
+int STM32_VLDISCO::assertHandler(int errorCode,string const & file, int line){
+
+    string text = "ASSERT FAILED IN";
+    text.append(file);
+    text.append(" IN LINE ");
+    text.append(to_string(line));
+    text.append(".ERROR CODE:"+ errorCode);
+    log(RTU_ERROR,text);
+
+    return RTU_OK;
+}
 
 
 

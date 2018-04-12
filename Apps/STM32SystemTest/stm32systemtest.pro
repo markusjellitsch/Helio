@@ -4,7 +4,7 @@ QT -= gui
 CONFIG += c++11
 INSTALLS += target
 target.path = /home/pi/Application
-TARGET = stm32test
+TARGET = stm32system
 CONFIG += console
 CONFIG -= app_bundle
 
@@ -15,7 +15,9 @@ SOURCES += main.cpp \
     ../../Sources/Interface/uart_rpi.cpp \
     ../../Sources/Slaves/stm32_vldisco.cpp \
     ../../Sources/Modbus/modbusrtu.cpp \
-    ../../Sources/Modbus/holdingregister.cpp
+    ../../Sources/Modbus/holdingregister.cpp \
+    ../../Sources/Logger/logger.cpp \
+    ../../Sources/Logger/stdlogger.cpp
 
 INCLUDEPATH += /home/user/raspi/sysroot/usr/include \
             /home/user/raspi/sysroot/usr/include \
@@ -34,4 +36,6 @@ HEADERS += \
     ../../Sources/Interface/uart_rpi.h \
     ../../Sources/Slaves/stm32_vldisco.h \
     ../../Sources/Modbus/modbusrtu.h \
-    ../../Sources/Modbus/modbusholdingregister.h
+    ../../Sources/Modbus/modbusholdingregister.h \
+    ../../Sources/Logger/logger.h \
+    ../../Sources/Logger/stdlogger.h
