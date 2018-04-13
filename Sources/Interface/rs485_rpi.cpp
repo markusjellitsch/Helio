@@ -48,17 +48,19 @@ int RS485Rpi::writeMulti(unsigned char const slaveAddress,unsigned char * buffer
 
      memcpy(mTxBuffer,buffer,numBytes);
 
-     // set DI-pin
+     // set DI-pin (=write mode)
      digitalWrite(RS485_RPI_DI_PIN,1);
 
+     // write data to the FIFO buffeer
      int count = write(mFdRS485,mTxBuffer,numBytes);
 
-     // wait until tx buffer is flushed.
+     // flush fifo buffer
      int success = tcdrain(mFdRS485);
      if (success!=0){
         return I_NOK;
      }
 
+     // reset DI-pin (=read mode)
      digitalWrite(RS485_RPI_DI_PIN,0);
 
      if (count < 0) return I_NOK;
@@ -87,14 +89,29 @@ int RS485Rpi::sendMessage(std::string const & message, unsigned int const numByt
      unsigned int len = numBytes;
      if (numBytes > RS485_RPI_BUFFERSIZE) len = RS485_RPI_BUFFERSIZE;
 
-     int count = -1;
+     unsigned int count = 0;
 
-     //while (count == -1){
-        count = read(mFdRS485,(void *)mRxBuffer,len);
-     //}
+     // reset the
+     memset(mRxBuffer,0,RS485_RPI_BUFFERSIZE);
 
-     if (count <0) return I_NOK;
+     // flush read FIFO first
+     tcflush(mFdRS485,TCIFLUSH);
 
+     while (count <= len || count >= RS485_RPI_BUFFERSIZE){
+
+         // read bytewise
+         int bytes = read(mFdRS485,(void *)mRxBuffer+count,1);
+
+         // exit on error or after timeout
+         if (bytes <= 0) break;
+
+         count +=bytes;
+     }
+
+     // return false when no data have been read
+     if (count == 0) return I_NOK;
+
+     //
      memcpy(buffer,mRxBuffer,count);
 
      return count;
@@ -123,7 +140,7 @@ void RS485Rpi::printf(const unsigned char * format,...){
 
      RS485Config_t config = *static_cast<RS485Config_t*>(params);
 
-    mFdRS485 =open(config.deviceName, O_WRONLY | O_NOCTTY |O_SYNC);
+    mFdRS485 =open(config.deviceName, O_RDWR | O_NOCTTY);
 
     if (mFdRS485 < 0){
 
@@ -131,6 +148,7 @@ void RS485Rpi::printf(const unsigned char * format,...){
      }
 
     struct termios options;
+    memset(&options,0,sizeof(termios));
     if (config.baudRate == RS485_RPI_BAUD19200)
         options.c_cflag = B19200;
     else options.c_cflag = B115200;
@@ -138,9 +156,11 @@ void RS485Rpi::printf(const unsigned char * format,...){
     options.c_iflag = IGNPAR;
     options.c_oflag = 0;
     options.c_lflag = 0;
-    options.c_cc[VTIME] = 0;
-    options.c_cc[VMIN] = 8;
+    memset(options.c_cc,_POSIX_VDISABLE,NCCS);
+    options.c_cc[VTIME] = 50;
+    options.c_cc[VMIN] = 0;
     tcflush(mFdRS485,TCIFLUSH);
+
     int success = tcsetattr(mFdRS485,TCSANOW,&options);
 
     if (success != 0) return I_NOK;

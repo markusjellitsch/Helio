@@ -56,18 +56,25 @@ int main(int argc, char *argv[])
     HETI heti(&RS485);
 
 
-
-
-
     cout << "Opend RS485 device:" << devFile << endl;
     cout << "Baudrate:" << config.baudRate << endl;
     cout << "Mode:";
     unsigned char buffer[RS485_RPI_BUFFERSIZE] = {0};
 
+    ModbusRTU rtu;
+    ModbusFrame_t frame = rtu.createFrame(0x11,0x02,buffer,1);
+
     while (1){
-        heti.writeSingleRegister(0,1);
+        if (RS485.readMulti(0,buffer,5) != I_NOK){
+            for (int i = 0;i<5;i++)cout << buffer[i];
+            cout << endl;
+        }
+        else cout << "no data read!" <<endl;
+
+
         sleep(1);
     }
+
 
 
    cout << endl;

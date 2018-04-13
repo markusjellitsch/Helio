@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.0.2, 2018-04-11T00:01:33. -->
+<!-- Written by QtCreator 4.0.2, 2018-04-12T23:16:30. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -279,7 +279,7 @@
        <value type="QString">/home/user/raspi/sysroot</value>
       </valuelist>
       <valuelist type="QVariantList" key="Qt4ProjectManager.MaemoRunConfiguration.LastDeployedTimes">
-       <value type="QDateTime">2018-04-11T00:00:16</value>
+       <value type="QDateTime">2018-04-12T23:06:27</value>
       </valuelist>
       <value type="bool" key="RemoteLinux.GenericDirectUploadStep.IgnoreMissingFiles">false</value>
       <value type="bool" key="RemoteLinux.GenericDirectUploadStep.Incremental">true</value>
@@ -341,7 +341,7 @@
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">rs485_test (on Remote Device)</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName"></value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">RemoteLinuxRunConfiguration:rs485_test</value>
-    <value type="QString" key="Qt4ProjectManager.MaemoRunConfiguration.Arguments">/dev/ttyAMA0 halloasdfjkasdföasdföl</value>
+    <value type="QString" key="Qt4ProjectManager.MaemoRunConfiguration.Arguments">/dev/ttyS0 halloasdfjkasdföasdföl</value>
     <value type="QString" key="Qt4ProjectManager.MaemoRunConfiguration.TargetName">rs485_test</value>
     <value type="QString" key="RemoteLinux.RunConfig.AlternateRemoteExecutable"></value>
     <value type="bool" key="RemoteLinux.RunConfig.UseAlternateRemoteExecutable">false</value>

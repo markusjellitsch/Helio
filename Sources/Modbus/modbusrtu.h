@@ -15,7 +15,9 @@
 #define MODBUS_FUNC_READHOLDING     0x03
 #define MODBUS_FUNC_WRITESINGLE     0x06
 
-#define MODBUS_DATASTACK_SIZE 255
+#define MODBUS_DATASTACK_SIZE       255
+
+#define MODBUS_FRAME_OVERHEAD       4
 
 
 typedef struct{

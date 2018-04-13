@@ -106,11 +106,13 @@ public:
     double getElapsed();
     void delayMilliseconds(uint16_t const milliseconds);
 
+    /* spi transaction to read data from rtu */
+    int transaction(uint8_t * txData, unsigned int txLen,uint8_t * rxData,unsigned int rxLen);
+    int transaction(ModbusFrame_t & send, ModbusFrame_t * receive);
+
+
 private:
 
-    /* spi transaction to read data from rtu */
-    int transaction(uint8_t * txData, unsigned int txLen,uint8_t * rxData,unsigned int * rxLen);
-    int transaction(ModbusFrame_t & send, ModbusFrame_t * receive);
 
     /* log events */
     int log(uint8_t const logLevel, std::string const & text);

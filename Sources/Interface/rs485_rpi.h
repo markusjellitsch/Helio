@@ -12,7 +12,7 @@
 #include <string>
 #include <termios.h>
 
-#define RS485_RPI_DEV_FILENAME ((char *)"/dev/ttyAMA0")
+#define RS485_RPI_DEV_FILENAME ((char *)"/dev/ttyS0")
 
 #define SPI_RPI_CHIPSELECT_0            0
 #define SPI_RPI_CHIPSELECT_1            1

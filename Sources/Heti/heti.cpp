@@ -52,8 +52,8 @@ HETI::~HETI(){
  *--------------------------------------------------------------------------*/
 int HETI::open(){
 
-    int error = updateRegisters();
-    HETIASSERT(error);
+    // think about open.
+
 
     log(HETI_NOTE,"HETI initialization successful!");
 
@@ -105,16 +105,9 @@ int HETI::log(uint8_t const logLevel,std::string const & text){
  * return slave response back. This is the base function for a communication
  * between Raspberry Pi and RTU.
  *--------------------------------------------------------------------------*/
-int HETI::transaction(uint8_t * txData, unsigned int txLen,uint8_t * rxData,unsigned int * rxLen){
+int HETI::transaction(uint8_t * txData, unsigned int txLen,uint8_t * rxData,unsigned int rxLen){
 
-
-    // write data len as very first byte
-    uint8_t len_byte =  (uint8_t)(txLen);
-    int error = mRS485Interface->writeMulti(0,&len_byte,1);
-    if (error != I_OK){
-        log(HETI_ERROR,"Writing to RS485 failed!");
-        return HETI_ERROR_RS485_WRITE_FAILED;
-    }
+    int error = 0;
 
     // transmit data
     error = mRS485Interface->writeMulti(0,txData,txLen);
@@ -125,37 +118,17 @@ int HETI::transaction(uint8_t * txData, unsigned int txLen,uint8_t * rxData,unsi
 
      mStatistic.commandsSent++;
 
-    bool timeout = 0;
-
-    // start timer
-    uint64_t start = getTime();
-
-
-
-
-
-    error =  mRS485Interface->readMulti(0,rxData,1);
-    if (error != I_OK){
+    // blocked waiting when reading
+    error =  mRS485Interface->readMulti(0,rxData,rxLen);
+    if (error == I_NOK){
         mStatistic.errorsOccured++;
-        log(HETI_ERROR,"Reading from SPI (first byte) failed!");
-        return HETI_ERROR_RS485_READ_FAILED;
-    }
-
-    // read rest bytes
-    uint16_t len = rxData[0];
-    error =  mRS485Interface->readMulti(0,rxData,len);
-    if (error != I_OK){
-        mStatistic.errorsOccured++;
-        log(HETI_ERROR,"Reading from SPI (payload bytes) failed!");
+        log(HETI_ERROR,"Reading from RS485 (first byte) failed!");
         return HETI_ERROR_RS485_READ_FAILED;
     }
 
 
-    log(HETI_NOTE,"SPI transaction OK!");
+    log(HETI_NOTE,"RS485 transaction OK!");
 
-    *rxLen = len;
-
-    // return total data read
     return HETI_OK;
 }
 
@@ -188,7 +161,7 @@ int HETI::transaction(ModbusFrame_t & send, ModbusFrame_t * receive){
 
        unsigned int numBytes = 0;
 
-       int error = transaction(dataSend,index,dataReceive,&numBytes);
+       int error = transaction(dataSend,index,dataReceive,receive->dataLen + MODBUS_FRAME_OVERHEAD);
        HETIASSERT(error);
 
 
