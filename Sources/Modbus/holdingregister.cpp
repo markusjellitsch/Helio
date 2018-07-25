@@ -33,7 +33,7 @@ ModbusHoldingRegister::ModbusHoldingRegister(int const size){
 * Desctructor
 *--------------------------------------------------------------------------*/
 ModbusHoldingRegister::~ModbusHoldingRegister(){
-    delete mRegisters;
+    delete []mRegisters;
 }
 
 /*---------------------------------------------------------------------------

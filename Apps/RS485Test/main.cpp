@@ -1,83 +1,68 @@
 // ********************************************************************
 // NAME         : main.cpp
 // AUTHOR       : Markus Jellitsch
-// DATE         : 24.11.2017
-// DESCRIPTION  : Simple Clear & Write functionality for SSD1306 display
+// DATE         : 24.05.2018
+// DESCRIPTION  : testing helio test interface (=Heti), a rs485 based interface
 // **********************************************************************
 
-#include <QCoreApplication>
 #include <iostream>
 #include <string>
-#include <rs485_rpi.h>
 #include <Heti/heti.h>
-#include <string.h>
-#include <stdio.h>
-#include <time.h>
-#include <unistd.h>
 
 using namespace std;
 
-#define ARG_COMMAND     1
-#define ARG_LINE0       2
-#define ARG_LINE1       3
-#define ARG_LINE2       4
-#define ARG_LINE3       5
-
 /*--------------------------------------------------
- * Simple clear & write program for
- * the SSSD1306 Oled Display!
- *
- * This program takes arguments from command
- * line and runs one of following commands:
- *          => clear display
- *          => write to display
- *
- * This program can take 4 additional params. Each
- * param is the text for a line (0-3)
+ * Modbus RTU (RS485) testing
  * --------------------------------------------------*/
 int main(int argc, char *argv[])
 {
-    QCoreApplication a(argc, argv);
 
-    RS485Config_t config ={RS485_RPI_DEV_FILENAME,RS485_RPI_DEFAULT_BAUDRATE};
-    RS485Rpi RS485;
-
-    if (argc >= 3) config.deviceName = argv[1];
-    int success = RS485.openInterface((void *)&config);
-    if (success != I_OK){
-
-        cout << "Couldn't open RS485 Inteface!" << endl;
-        return 1;
+    // get the instance
+    HETI * heti = HETI::GetInstance();
+    if (heti == nullptr){
+        cout << "HETI couldn't be initialized!" << endl;
+        return 0;
     }
 
+    // Open Heti (= helio test interface)
+    if (heti->open() != HETI_OK){
+        cout << "Error opeing heti" << endl;
+        return 0;
+    }
 
-    string const devFile(config.deviceName);
-
-    HETI heti(&RS485);
-
-
-    cout << "Opend RS485 device:" << devFile << endl;
-    cout << "Baudrate:" << config.baudRate << endl;
-    cout << "Mode:";
-    unsigned char buffer[RS485_RPI_BUFFERSIZE] = {0};
-
-    ModbusRTU rtu;
-    ModbusFrame_t frame = rtu.createFrame(0x11,0x02,buffer,1);
+    int success = 0;
 
     while (1){
-        if (RS485.readMulti(0,buffer,5) != I_NOK){
-            for (int i = 0;i<5;i++)cout << buffer[i];
-            cout << endl;
+
+        // Write to a single register
+        if (argc ==2){
+           // writing to FU
+            int success = heti->writeSingleRegister(2,0);
+            success = heti->writeSingleRegister(1,(uint16_t)atoi(argv[1]));
+            if (success == HETI_OK){
+                cout << "Write OK!" << endl;
+            }
+            else cout << "Write NOK!" << endl;
+
+            return 0;
         }
-        else cout << "no data read!" <<endl;
 
+        // start timer & update registers (measure elapsed time)
+        heti->startTimer();
+        success = heti->updateRegisters();
+        cout << heti->getElapsed() << "ms" << endl;
 
-        sleep(1);
-    }
+        if (success==0){
+            cout << "Reading Registers OK!" << endl;
+        }
+        else cout << "Reading Registers NOK!" << endl;
 
+        // print communication statistic
+        heti->printStatistic();
 
+        // set terminal cursor back
+        heti->setTerminalCursorBack(8);
+  }
 
-   cout << endl;
-
- return 0;
+    return 0;
 }

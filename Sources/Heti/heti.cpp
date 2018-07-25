@@ -16,48 +16,74 @@
 #include <iomanip>
 #include <ctime>
 
-
 using namespace std;
 
+HETI * HETI::mInstance = nullptr;
+
 /*---------------------------------------------------------------------------
- * Constructor. Initialize holding registers and set SPI interface
+ *  Return the singelton
  *--------------------------------------------------------------------------*/
-HETI::HETI(RS485Rpi * interface){
+HETI * HETI::GetInstance(){
 
-    mRS485Interface = interface;
+    // create if not existing
+    if (mInstance == nullptr){
+        mInstance = new HETI;
+        assert(mInstance != nullptr);
+    }
 
-    mHoldingRegisters = new ModbusHoldingRegister(HETI_NUM_HOLDING_REGISTER);
-    assert(mHoldingRegisters != nullptr);
-
-    mStatistic.commandsSent = 0;
-    mStatistic.errorsOccured = 0;
-    mStatistic.timeoutsOccured = 0;
-    mStatistic.responsesReceived = 0;
-
-    mStopwatchCounter = -1;
-
-    mLogger = nullptr;
+    return mInstance;
 }
 
+
+/*---------------------------------------------------------------------------
+ *  Constructor
+ *--------------------------------------------------------------------------*/
+HETI::HETI(){
+    mLogger = nullptr;
+    mRS485Interface = nullptr;
+    mHoldingRegisters = new ModbusHoldingRegister(HETI_NUM_HOLDING_REGISTER);
+}
+
+/*---------------------------------------------------------------------------
+ *  Destructor
+ *--------------------------------------------------------------------------*/
 HETI::~HETI(){
 
     delete mHoldingRegisters;
     mLogger = nullptr;
     mStopwatchCounter = -1;
+    mRS485Interface->closeInterface();
+    delete mRS485Interface ;
 }
 
 /*---------------------------------------------------------------------------
  * Connect to RTU by reading a special register. This register must contain
  * a specified value. Otherwise connection goes wrong
  *--------------------------------------------------------------------------*/
-int HETI::open(){
+int HETI::open(RS485Config_t * rs485Config){
 
-    // think about open.
+    if (rs485Config == nullptr) return HETI_ERROR_NULLPTR;
 
+    // create if not existing
+    if (mRS485Interface == nullptr){
+        mRS485Interface = new RS485Rpi;
+    }
 
-    log(HETI_NOTE,"HETI initialization successful!");
+    // open rs485
+    int success = mRS485Interface->openInterface((void *)rs485Config);
+    if (success){
+        log(HETI_NOTE,"HETI initialization successful!");
+    }
+    else{
+        log(HETI_NOTE,"HETI initialization successful!");
+    }
 
-    return HETI_OK;
+    mStatistic.commandsSent = 0;
+    mStatistic.errorsOccured = 0;
+    mStatistic.responsesReceived = 0;
+    mStatistic.timeoutsOccured = 0;
+
+    return success;
 }
 
 
@@ -95,15 +121,14 @@ int HETI::log(uint8_t const logLevel,std::string const & text){
 
      }
 
-
     return HETI_OK;
 }
 
 
 /*---------------------------------------------------------------------------
- * SPI transaction to the RTU. This function transmits specified data and
+ * RS485 transaction to connected slave. This function transmits specified data and
  * return slave response back. This is the base function for a communication
- * between Raspberry Pi and RTU.
+ * between Raspberry Pi and slave.
  *--------------------------------------------------------------------------*/
 int HETI::transaction(uint8_t * txData, unsigned int txLen,uint8_t * rxData,unsigned int rxLen){
 
@@ -120,22 +145,22 @@ int HETI::transaction(uint8_t * txData, unsigned int txLen,uint8_t * rxData,unsi
 
     // blocked waiting when reading
     error =  mRS485Interface->readMulti(0,rxData,rxLen);
-    if (error == I_NOK){
+    if ((size_t)error != rxLen){
         mStatistic.errorsOccured++;
         log(HETI_ERROR,"Reading from RS485 (first byte) failed!");
         return HETI_ERROR_RS485_READ_FAILED;
     }
-
 
     log(HETI_NOTE,"RS485 transaction OK!");
 
     return HETI_OK;
 }
 
+
 /*---------------------------------------------------------------------------
- * SPI transaction to the RTU. This function transmits specified data and
+ * RS485 transaction to connected slave. This function transmits specified data and
  * return slave response back. This is the base function for a communication
- * between Raspberry Pi and RTU.
+ * between Raspberry Pi and slave.
  *--------------------------------------------------------------------------*/
 int HETI::transaction(ModbusFrame_t & send, ModbusFrame_t * receive){
 
@@ -159,9 +184,9 @@ int HETI::transaction(ModbusFrame_t & send, ModbusFrame_t * receive){
 
        if (receive == nullptr) return HETI_ERROR_NULLPTR;
 
-       unsigned int numBytes = 0;
+       unsigned int numBytes = receive->dataLen + MODBUS_FRAME_OVERHEAD;
 
-       int error = transaction(dataSend,index,dataReceive,receive->dataLen + MODBUS_FRAME_OVERHEAD);
+       int error = transaction(dataSend,index,dataReceive,numBytes);
        HETIASSERT(error);
 
 
@@ -184,8 +209,8 @@ int HETI::transaction(ModbusFrame_t & send, ModbusFrame_t * receive){
 
 
 /*---------------------------------------------------------------------------
- * Write a single register of the RTU's internal registers. Note that some
- * internal registers can be marked as read only. Therfore this register can not
+ * Write a single register of the slave's internal registers. Note that some
+ * internal registers can be marked as read only. Therfore these register can not
  * be written and this function won't return HETI_OK
  *--------------------------------------------------------------------------*/
 int HETI::writeSingleRegister(uint8_t const reg, int16_t const value){
@@ -200,7 +225,7 @@ int HETI::writeSingleRegister(uint8_t const reg, int16_t const value){
      ModbusFrame_t responseFrame;
      responseFrame.dataLen = cNumBytes;
 
-     // create spi frame
+     // create modbus frame
      ModbusFrame_t sendFrame = modbus.createFrame(HETI_ADDRESS,MODBUS_FUNC_WRITESINGLE,data,cNumBytes);
 
      int error = transaction(sendFrame,&responseFrame);
@@ -219,7 +244,7 @@ int HETI::writeSingleRegister(uint8_t const reg, int16_t const value){
  }
 
 /*---------------------------------------------------------------------------
- * Read a single register of the RTU's internal registers.
+ * Read a single register of the slave's internal registers.
  *--------------------------------------------------------------------------*/
 int HETI::readSingleRegister(uint8_t const reg,int16_t * value){
 
@@ -234,7 +259,7 @@ int HETI::readSingleRegister(uint8_t const reg,int16_t * value){
      ModbusFrame_t responseFrame;
      responseFrame.dataLen = 3;
 
-     // create spi frame
+     // create modbus frame
      ModbusFrame_t sendFrame = modbus.createFrame(HETI_ADDRESS,MODBUS_FUNC_READHOLDING,data,cNumBytes);
 
      string text = "Reading Single Register " + reg;
@@ -257,7 +282,7 @@ int HETI::readSingleRegister(uint8_t const reg,int16_t * value){
 
 
 /*---------------------------------------------------------------------------
- * Read multiple registers of the RTU' internal registers.
+ * Read multiple registers of the slave's internal registers.
  *--------------------------------------------------------------------------*/
  int HETI::readMultiRegister(uint8_t const reg,uint8_t const num, ModbusHoldingRegister * holdings){
 
@@ -311,7 +336,7 @@ int HETI::readSingleRegister(uint8_t const reg,int16_t * value){
 
 
  /*---------------------------------------------------------------------------
-  * Update all registers of the RTU and save them to the internal registers
+  * Update all registers of the slave and save them to the internal registers
   * of this class.
   *--------------------------------------------------------------------------*/
 int HETI::updateRegisters(){
@@ -323,7 +348,7 @@ int HETI::updateRegisters(){
 
 
 /*---------------------------------------------------------------------------
- * Reset all registers of the RTU.
+ * Reset all registers of the slave.
  *--------------------------------------------------------------------------*/
 int HETI::resetRegisters(){
 
@@ -362,7 +387,7 @@ int16_t HETI::getRegister(uint8_t const reg) const{
 
 
 /*---------------------------------------------------------------------------
- * Set a specified bit mask in the RTU's internal register. This function can
+ * Set a specified bit mask in the slave's internal register. This function can
  * be used to set a single bit in the register and avoid overwritig existing
  * value.
  *--------------------------------------------------------------------------*/
@@ -384,7 +409,7 @@ int HETI::setBit(uint8_t const reg, uint16_t const bitMask){
 }
 
 /*---------------------------------------------------------------------------
- * Clear a bit mask in the RTU's internal register. This function can be used
+ * Clear a bit mask in the slave's internal register. This function can be used
  * to reset a single bit in the register and avoid overwriting an existing value.
  *--------------------------------------------------------------------------*/
 int HETI::clearBit(uint8_t const reg, uint16_t const bitMask){
@@ -446,6 +471,8 @@ int HETI::compareRegisterMask(uint8_t const reg, int16_t const value,bool const 
 
     return HETI_ERROR_COMPARISON_FAILED;
 }
+
+
 
 /*---------------------------------------------------------------------------
  * Compare a register with a specified bit value. This function returns HETI_OK
@@ -514,9 +541,22 @@ int HETI::compareZero(uint8_t const reg, uint16_t const bit){
      cout << setw(30) << "Modbus reponses received" << ":" << mStatistic.responsesReceived << endl;
      cout << setw(30) << "Modbus errors received" << ":" << mStatistic.errorsOccured << endl;
      cout << setw(30) << "Error rate (%):" << ((double)mStatistic.errorsOccured +(double)mStatistic.timeoutsOccured) / (double)mStatistic.commandsSent * 100 << endl;
+
      return HETI_OK;
  }
 
+ /*---------------------------------------------------------------------------
+  * Move Terminal Cursor Up
+  *--------------------------------------------------------------------------*/
+ int HETI::setTerminalCursorBack(uint8_t const num)const{
+
+     // set cursor to the beginning
+     for (size_t i = 0; i<num; i++){
+          cout << "\x1b[A";
+     }
+
+     return HETI_OK;
+ }
 
  /*---------------------------------------------------------------------------
   * Start stopwatch
@@ -533,11 +573,9 @@ int HETI::compareZero(uint8_t const reg, uint16_t const bit){
   *--------------------------------------------------------------------------*/
  double HETI::stopTimer(){
 
-
      if (mStopwatchCounter == 0){
             return 0;
      }
-
 
      double elapsed = getElapsed();
 
@@ -566,7 +604,7 @@ int HETI::compareZero(uint8_t const reg, uint16_t const bit){
   *--------------------------------------------------------------------------*/
  double HETI::getElapsed(){
 
-     // calculate elapsed time
+     // calculate elapsed time (milliseconds)
      uint64_t elapsed = (getTime() - mStopwatchCounter) / 1000000;
      return elapsed;
  }
@@ -581,7 +619,9 @@ int HETI::compareZero(uint8_t const reg, uint16_t const bit){
      }
  }
 
-
+ /*---------------------------------------------------------------------------
+  * Assertion
+  *--------------------------------------------------------------------------*/
 int HETI::assertHandler(int errorCode,string const & file, int line){
 
     string text = "ASSERT FAILED IN";
@@ -593,18 +633,3 @@ int HETI::assertHandler(int errorCode,string const & file, int line){
 
     return HETI_OK;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

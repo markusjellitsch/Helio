@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.0.2, 2018-02-28T20:04:01. -->
+<!-- Written by QtCreator 4.0.2, 2018-06-25T21:17:17. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -267,13 +267,13 @@
       <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName"></value>
       <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">RemoteLinux.DirectUploadStep</value>
       <valuelist type="QVariantList" key="Qt4ProjectManager.MaemoRunConfiguration.LastDeployedFiles">
+       <value type="QString">/home/user/RPI_COM/Apps/build-stm32test-Raspberry_Pi_2_Qt_5_7_0-Debug/stm32test</value>
+       <value type="QString">/home/user/RPI_COM/Apps/build-stm32test-Raspberry_Pi_2_Qt_5_7_0-Debug/stm32test</value>
        <value type="QString">/home/user/RPI_COM/Apps/build-stm32test-Raspberry_Pi_2_Qt_5_7_0-Debug/smtunnel</value>
-       <value type="QString">/home/user/RPI_COM/Apps/build-stm32test-Raspberry_Pi_2_Qt_5_7_0-Debug/stm32test</value>
-       <value type="QString">/home/user/RPI_COM/Apps/build-stm32test-Raspberry_Pi_2_Qt_5_7_0-Debug/stm32test</value>
       </valuelist>
       <valuelist type="QVariantList" key="Qt4ProjectManager.MaemoRunConfiguration.LastDeployedHosts">
-       <value type="QString">192.168.1.203</value>
        <value type="QString">192.168.0.203</value>
+       <value type="QString">192.168.1.203</value>
        <value type="QString">192.168.1.203</value>
       </valuelist>
       <valuelist type="QVariantList" key="Qt4ProjectManager.MaemoRunConfiguration.LastDeployedRemotePaths">
@@ -287,9 +287,9 @@
        <value type="QString">/home/user/raspi/sysroot</value>
       </valuelist>
       <valuelist type="QVariantList" key="Qt4ProjectManager.MaemoRunConfiguration.LastDeployedTimes">
-       <value type="QDateTime">2018-01-30T22:47:17</value>
        <value type="QDateTime">2018-02-26T23:13:20</value>
        <value type="QDateTime">2018-02-02T14:52:48</value>
+       <value type="QDateTime">2018-01-30T22:47:17</value>
       </valuelist>
       <value type="bool" key="RemoteLinux.GenericDirectUploadStep.IgnoreMissingFiles">false</value>
       <value type="bool" key="RemoteLinux.GenericDirectUploadStep.Incremental">true</value>
@@ -351,7 +351,7 @@
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">stm32test (on Remote Device)</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName"></value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">RemoteLinuxRunConfiguration:stm32test</value>
-    <value type="QString" key="Qt4ProjectManager.MaemoRunConfiguration.Arguments">m 1 10</value>
+    <value type="QString" key="Qt4ProjectManager.MaemoRunConfiguration.Arguments">d </value>
     <value type="QString" key="Qt4ProjectManager.MaemoRunConfiguration.TargetName">stm32test</value>
     <value type="QString" key="RemoteLinux.RunConfig.AlternateRemoteExecutable"></value>
     <value type="bool" key="RemoteLinux.RunConfig.UseAlternateRemoteExecutable">false</value>

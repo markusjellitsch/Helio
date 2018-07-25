@@ -51,19 +51,28 @@ int RS485Rpi::writeMulti(unsigned char const slaveAddress,unsigned char * buffer
      // set DI-pin (=write mode)
      digitalWrite(RS485_RPI_DI_PIN,1);
 
-     // write data to the FIFO buffeer
-     int count = write(mFdRS485,mTxBuffer,numBytes);
 
-     // flush fifo buffer
-     int success = tcdrain(mFdRS485);
-     if (success!=0){
-        return I_NOK;
+     int succes =  write(mFdRS485,mTxBuffer,numBytes);
+     if ((size_t)succes != numBytes) return I_NOK;
+
+     struct timespec ts;
+     clock_gettime(CLOCK_MONOTONIC,&ts);
+
+     // calculate elapsed time
+     uint64_t now = (uint64_t)ts.tv_sec * 1000000000U +(uint64_t)ts.tv_nsec;
+
+     while (1){
+         // calculate elapsed tirme
+         clock_gettime(CLOCK_MONOTONIC,&ts);
+         uint64_t tmp = (uint64_t)ts.tv_sec * 1000000000U +(uint64_t)ts.tv_nsec;
+         tmp-=now;
+         if ((tmp)>= ((531000) * numBytes)){ // TODO: very magic!!
+             break;
+         }
      }
 
      // reset DI-pin (=read mode)
      digitalWrite(RS485_RPI_DI_PIN,0);
-
-     if (count < 0) return I_NOK;
 
      return I_OK;
  }
@@ -74,7 +83,7 @@ int RS485Rpi::sendMessage(std::string const & message, unsigned int const numByt
     memcpy(buffer,message.c_str(),numBytes);
 
 
-   return  writeMulti(0,buffer,numBytes);
+    return  writeMulti(0,buffer,numBytes);
 }
 
 
@@ -97,10 +106,10 @@ int RS485Rpi::sendMessage(std::string const & message, unsigned int const numByt
      // flush read FIFO first
      tcflush(mFdRS485,TCIFLUSH);
 
-     while (count <= len || count >= RS485_RPI_BUFFERSIZE){
+     while (count <= len && (count <= RS485_RPI_BUFFERSIZE)){
 
          // read bytewise
-         int bytes = read(mFdRS485,(void *)mRxBuffer+count,1);
+         int bytes = read(mFdRS485,(void *)mRxBuffer,len);
 
          // exit on error or after timeout
          if (bytes <= 0) break;
@@ -108,16 +117,17 @@ int RS485Rpi::sendMessage(std::string const & message, unsigned int const numByt
          count +=bytes;
      }
 
+
      // return false when no data have been read
      if (count == 0) return I_NOK;
 
-     //
+     // copy
      memcpy(buffer,mRxBuffer,count);
 
      return count;
  }
 
-void RS485Rpi::printf(const unsigned char * format,...){
+void RS485Rpi::printf(const char * format,...){
 
     unsigned char buf[RS485_RPI_BUFFERSIZE];
 
@@ -155,10 +165,10 @@ void RS485Rpi::printf(const unsigned char * format,...){
     options.c_cflag |= CS8 | CLOCAL| CREAD;
     options.c_iflag = IGNPAR;
     options.c_oflag = 0;
-    options.c_lflag = 0;
+    options.c_lflag = FLUSHO;
     memset(options.c_cc,_POSIX_VDISABLE,NCCS);
-    options.c_cc[VTIME] = 50;
-    options.c_cc[VMIN] = 0;
+    options.c_cc[VTIME] = config.rxTimeout *10;
+    options.c_cc[VMIN] = config.rxBytes;
     tcflush(mFdRS485,TCIFLUSH);
 
     int success = tcsetattr(mFdRS485,TCSANOW,&options);

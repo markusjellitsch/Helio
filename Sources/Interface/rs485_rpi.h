@@ -30,6 +30,8 @@
 typedef struct {
     char *   deviceName;
     unsigned int baudRate;
+    unsigned int rxTimeout;
+    unsigned int rxBytes;
 }RS485Config_t;
 
 class RS485Rpi : public Interface
@@ -44,7 +46,7 @@ public:
 
     virtual int sendMessage(std::string const & message, unsigned int const numBytes0);
 
-    virtual void printf(const unsigned char * format,...);
+    virtual void printf(const char * format,...);
 
 
 private:

@@ -15,7 +15,9 @@ SOURCES += main.cpp \
     ../../Sources/Interface/uart_rpi.cpp \
     ../../Sources/Slaves/stm32_vldisco.cpp \
     ../../Sources/Modbus/modbusrtu.cpp \
-    ../../Sources/Modbus/holdingregister.cpp
+    ../../Sources/Modbus/holdingregister.cpp \
+    ../../Sources/Logger/stdlogger.cpp \
+    ../../Sources/Logger/logger.cpp
 
 INCLUDEPATH += /home/user/raspi/sysroot/usr/include \
             /home/user/raspi/sysroot/usr/include \
@@ -34,4 +36,7 @@ HEADERS += \
     ../../Sources/Interface/uart_rpi.h \
     ../../Sources/Slaves/stm32_vldisco.h \
     ../../Sources/Modbus/modbusrtu.h \
-    ../../Sources/Modbus/modbusholdingregister.h
+    ../../Sources/Modbus/modbusholdingregister.h \
+    ../../Sources/Modbus/holdingregister.h \
+    ../../Sources/Logger/stdlogger.h \
+    ../../Sources/Logger/logger.h

@@ -95,11 +95,12 @@ int main(int argc, char *argv[])
 
 
     case 'd':
-        for (int i = reg; i < reg+val;i++){
-            success =  stm32.readSingleRegister(i,&value);
-            regs.setValue(i,value);
-       }
-        regs.dump();
+        success =  stm32.dumpRegisters(1);
+        if (success == I_OK)
+             cout << "reading holding register: OK"<< endl;
+        else
+            cout << "reading holding register: NOK"<< endl;
+
     break;
 
     case 'w':

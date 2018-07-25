@@ -35,8 +35,7 @@ void Logger::Log(std:: string severityLevel,std::string const & text){
    stream << setw(20) << left << getTimestamp();
    stream << ": ";
    stream << setw(8) << mLogName << " ";
-   stream << left << setw(5
-                          ) <<  " -->" << left << setw(7) << severityLevel;
+   stream << left << setw(5) <<  " -->" << left << setw(7) << severityLevel;
    stream << ": ";
    stream << text <<"!";
 

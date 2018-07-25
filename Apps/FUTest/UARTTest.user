@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.0.2, 2018-06-21T07:29:01. -->
+<!-- Written by QtCreator 4.0.2, 2017-11-07T19:15:03. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -66,7 +66,7 @@
    <value type="int" key="ProjectExplorer.Target.ActiveDeployConfiguration">0</value>
    <value type="int" key="ProjectExplorer.Target.ActiveRunConfiguration">0</value>
    <valuemap type="QVariantMap" key="ProjectExplorer.Target.BuildConfiguration.0">
-    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">/home/user/RPI_COM/Apps/build-RS485Test-Raspberry_Pi_2_Qt_5_7_0-Debug</value>
+    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">/home/user/RPI_COM/Apps/build-SSD13008Test-Raspberry_Pi_2_Qt_5_7_0-Debug</value>
     <valuemap type="QVariantMap" key="ProjectExplorer.BuildConfiguration.BuildStepList.0">
      <valuemap type="QVariantMap" key="ProjectExplorer.BuildStepList.Step.0">
       <value type="bool" key="ProjectExplorer.BuildStep.Enabled">true</value>
@@ -126,7 +126,7 @@
     <value type="bool" key="Qt4ProjectManager.Qt4BuildConfiguration.UseShadowBuild">true</value>
    </valuemap>
    <valuemap type="QVariantMap" key="ProjectExplorer.Target.BuildConfiguration.1">
-    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">/home/user/RPI_COM/Apps/build-RS485Test-Raspberry_Pi_2_Qt_5_7_0-Release</value>
+    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">/home/user/RPI_COM/Apps/build-SSD13008Test-Raspberry_Pi_2_Qt_5_7_0-Release</value>
     <valuemap type="QVariantMap" key="ProjectExplorer.BuildConfiguration.BuildStepList.0">
      <valuemap type="QVariantMap" key="ProjectExplorer.BuildStepList.Step.0">
       <value type="bool" key="ProjectExplorer.BuildStep.Enabled">true</value>
@@ -186,7 +186,7 @@
     <value type="bool" key="Qt4ProjectManager.Qt4BuildConfiguration.UseShadowBuild">true</value>
    </valuemap>
    <valuemap type="QVariantMap" key="ProjectExplorer.Target.BuildConfiguration.2">
-    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">/home/user/RPI_COM/Apps/build-RS485Test-Raspberry_Pi_2_Qt_5_7_0-Profile</value>
+    <value type="QString" key="ProjectExplorer.BuildConfiguration.BuildDirectory">/home/user/RPI_COM/Apps/build-SSD13008Test-Raspberry_Pi_2_Qt_5_7_0-Profile</value>
     <valuemap type="QVariantMap" key="ProjectExplorer.BuildConfiguration.BuildStepList.0">
      <valuemap type="QVariantMap" key="ProjectExplorer.BuildStepList.Step.0">
       <value type="bool" key="ProjectExplorer.BuildStep.Enabled">true</value>
@@ -267,19 +267,29 @@
       <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName"></value>
       <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">RemoteLinux.DirectUploadStep</value>
       <valuelist type="QVariantList" key="Qt4ProjectManager.MaemoRunConfiguration.LastDeployedFiles">
-       <value type="QString">/home/user/RPI_COM/Apps/build-RS485Test-Raspberry_Pi_2_Qt_5_7_0-Debug/rs485_test</value>
+       <value type="QString">/home/user/RPI_COM/Apps/build-SSD13008Test-Raspberry_Pi_2_Qt_5_7_0-Debug/SSD13008</value>
+       <value type="QString">/home/user/RPI_COM/Apps/build-SSD13008Test-Raspberry_Pi_2_Qt_5_7_0-Debug/display_ssd13008</value>
+       <value type="QString">/home/user/RPI_COM/Apps/build-SSD13008Test-Raspberry_Pi_2_Qt_5_7_0-Debug/SSD13008Test</value>
       </valuelist>
       <valuelist type="QVariantList" key="Qt4ProjectManager.MaemoRunConfiguration.LastDeployedHosts">
-       <value type="QString">192.168.0.203</value>
+       <value type="QString">192.168.1.203</value>
+       <value type="QString">192.168.1.203</value>
+       <value type="QString">192.168.1.203</value>
       </valuelist>
       <valuelist type="QVariantList" key="Qt4ProjectManager.MaemoRunConfiguration.LastDeployedRemotePaths">
+       <value type="QString">/home/pi/Application</value>
+       <value type="QString">/home/pi/Application</value>
        <value type="QString">/home/pi/Application</value>
       </valuelist>
       <valuelist type="QVariantList" key="Qt4ProjectManager.MaemoRunConfiguration.LastDeployedSysroots">
        <value type="QString">/home/user/raspi/sysroot</value>
+       <value type="QString">/home/user/raspi/sysroot</value>
+       <value type="QString">/home/user/raspi/sysroot</value>
       </valuelist>
       <valuelist type="QVariantList" key="Qt4ProjectManager.MaemoRunConfiguration.LastDeployedTimes">
-       <value type="QDateTime">2018-06-18T23:37:28</value>
+       <value type="QDateTime">2017-11-07T14:21:57</value>
+       <value type="QDateTime">2017-11-07T18:31:22</value>
+       <value type="QDateTime">2017-11-06T10:55:38</value>
       </valuelist>
       <value type="bool" key="RemoteLinux.GenericDirectUploadStep.IgnoreMissingFiles">false</value>
       <value type="bool" key="RemoteLinux.GenericDirectUploadStep.Incremental">true</value>
@@ -338,18 +348,18 @@
     </valuelist>
     <value type="int" key="PE.EnvironmentAspect.Base">1</value>
     <valuelist type="QVariantList" key="PE.EnvironmentAspect.Changes"/>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">heti_test (on Remote Device)</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">display_ssd13008 (on Remote Device)</value>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName"></value>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">RemoteLinuxRunConfiguration:heti_test</value>
-    <value type="QString" key="Qt4ProjectManager.MaemoRunConfiguration.Arguments"></value>
-    <value type="QString" key="Qt4ProjectManager.MaemoRunConfiguration.TargetName">heti_test</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">RemoteLinuxRunConfiguration:display_ssd13008</value>
+    <value type="QString" key="Qt4ProjectManager.MaemoRunConfiguration.Arguments">i 1200</value>
+    <value type="QString" key="Qt4ProjectManager.MaemoRunConfiguration.TargetName">display_ssd13008</value>
     <value type="QString" key="RemoteLinux.RunConfig.AlternateRemoteExecutable"></value>
     <value type="bool" key="RemoteLinux.RunConfig.UseAlternateRemoteExecutable">false</value>
     <value type="QString" key="RemoteLinux.RunConfig.WorkingDirectory"></value>
     <value type="uint" key="RunConfiguration.QmlDebugServerPort">3768</value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">true</value>
-    <value type="bool" key="RunConfiguration.UseMultiProcess">false</value>
+    <value type="bool" key="RunConfiguration.UseMultiProcess">true</value>
     <value type="bool" key="RunConfiguration.UseQmlDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseQmlDebuggerAuto">true</value>
    </valuemap>
