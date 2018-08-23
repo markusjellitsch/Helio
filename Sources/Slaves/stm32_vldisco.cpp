@@ -782,15 +782,33 @@ int STM32_VLDISCO::getFrequency(uint8_t const channel,uint16_t * value){
   *--------------------------------------------------------------------------*/
  int STM32_VLDISCO::printStatistic() const{
 
+     SPIConfig_t spiConfig = mSPIInterface->getConfig();
+
+     cout << left;
      cout << setw(35) << setfill('-') << "-" << setfill(' ')<< endl;
      cout << setw(35) << "RTU Statistic" << endl;
      cout << setw(35) << setfill('-') << "-" << setfill(' ') << endl;
 
+     cout << setw(30) << "SPI Device" << ":" << spiConfig.deviceName << endl;
+     cout << setw(30) << "SPI CLK Speed" << ":" << spiConfig.busSpeed << endl;
      cout << setw(30) << "Modbus packets sent" << ":" << mStatistic.commandsSent << endl;
      cout << setw(30) << "Timouts occured" << ":" << mStatistic.timeoutsOccured << endl;
      cout << setw(30) << "Modbus reponses received" << ":" << mStatistic.responsesReceived << endl;
      cout << setw(30) << "Modbus errors received" << ":" << mStatistic.errorsOccured << endl;
-     cout << setw(30) << "Error rate (%):" << ((double)mStatistic.errorsOccured +(double)mStatistic.timeoutsOccured) / (double)mStatistic.commandsSent * 100 << endl;
+     cout << setw(30) << "Error rate (%)" <<":"<< ((double)mStatistic.errorsOccured +(double)mStatistic.timeoutsOccured) / (double)mStatistic.commandsSent * 100 << endl;
+     return RTU_OK;
+ }
+
+ /*---------------------------------------------------------------------------
+  * Move Terminal Cursor Up
+  *--------------------------------------------------------------------------*/
+ int STM32_VLDISCO::setTerminalCursorBack(uint8_t const num)const{
+
+     // set cursor to the beginning
+     for (size_t i = 0; i<num; i++){
+          cout << "\x1b[A";
+     }
+
      return RTU_OK;
  }
 

@@ -54,9 +54,9 @@ int SPIRPi::writeMulti(unsigned char const slaveAddress,unsigned char * buffer, 
          spi[i].rx_buf = (unsigned long) (mMisoBuffer + i);
          spi[i].len = sizeof(*(mMosiBuffer +i));
          spi[i].delay_usecs = 0;
-         spi[i].speed_hz = mBusSpeed;
+         spi[i].speed_hz = mConfig.busSpeed;
          spi[i].bits_per_word = 0;
-         spi[i].cs_change = mInvertCS;
+         spi[i].cs_change = mConfig.invertCS;
          spi[i].pad = 0;
      }
 
@@ -88,9 +88,9 @@ int SPIRPi::writeMulti(unsigned char const slaveAddress, uint16_t * buffer, size
          spi[i].rx_buf = 0;
          spi[i].len = sizeof(*(buffer +i));
          spi[i].delay_usecs = 0;
-         spi[i].speed_hz = mBusSpeed;
+         spi[i].speed_hz = mConfig.busSpeed;
          spi[i].bits_per_word = 0;
-         spi[i].cs_change = mInvertCS;
+         spi[i].cs_change = mConfig.invertCS;
          spi[i].pad = 0;
      }
 
@@ -124,9 +124,9 @@ int SPIRPi::writeMulti(unsigned char const slaveAddress, uint16_t * buffer, size
          spi[i].rx_buf = (unsigned long) (buffer);
          spi[i].len = numBytes;
          spi[i].delay_usecs = 0;
-         spi[i].speed_hz = mBusSpeed;
+         spi[i].speed_hz = mConfig.busSpeed;
          spi[i].bits_per_word = 0;
-         spi[i].cs_change = mInvertCS;
+         spi[i].cs_change = mConfig.invertCS;
          spi[i].pad = 0;
      }
 
@@ -142,11 +142,10 @@ int SPIRPi::writeMulti(unsigned char const slaveAddress, uint16_t * buffer, size
 int SPIRPi::startTransaction(unsigned char * tx_buffer, size_t const num_tx_bytes, unsigned char * rx_buffer, size_t const num_rx_bytes){
 
 
-    size_t const cNumBytes = 2;
-    struct spi_ioc_transfer transmit;
-      struct spi_ioc_transfer receive;
 
-    unsigned int i = 0;
+    struct spi_ioc_transfer transmit;
+    struct spi_ioc_transfer receive;
+
     int retVal = -1;
 
     // transmit struct
@@ -156,7 +155,7 @@ int SPIRPi::startTransaction(unsigned char * tx_buffer, size_t const num_tx_byte
     transmit.rx_buf = 0;
     transmit.len = num_tx_bytes;
     transmit.delay_usecs = 0;
-    transmit.speed_hz = mBusSpeed;
+    transmit.speed_hz = mConfig.busSpeed;
     transmit.bits_per_word = 0;
     transmit.cs_change = 0;
     transmit.pad = 0;
@@ -168,7 +167,7 @@ int SPIRPi::startTransaction(unsigned char * tx_buffer, size_t const num_tx_byte
     receive.rx_buf = (unsigned long) rx_buffer;
     receive.len = num_rx_bytes;
     receive.delay_usecs = 0;
-    receive.speed_hz = mBusSpeed;
+    receive.speed_hz = mConfig.busSpeed;
     receive.bits_per_word = 0;
     receive.cs_change = 0;
     receive.pad = 0;
@@ -199,19 +198,22 @@ int SPIRPi::setCount(unsigned int count){
      if (params == nullptr) return I_NOK;
 
      SPIConfig_t config = *static_cast<SPIConfig_t*>(params);
-     mBits = config.bits;
-     mBusSpeed = config.busSpeed;
-     mInvertCS = config.invertCS;
+     mConfig.bits = config.bits;
+     mConfig.busSpeed = config.busSpeed;
+     mConfig.invertCS=  config.invertCS;
+
 
      uint8_t const mode = SPI_MODE_0;
      mOpen = false;
-     mFdSPI = open(config.deviceName,O_RDWR);
+     mFdSPI = open(config.deviceName.c_str(),O_RDWR);
 
     if (mFdSPI < 0){
 
          return errno;
      }
 
+     string tmp(config.deviceName);
+     mConfig.deviceName = tmp;
 
      int statusVal = -1;
 
@@ -220,12 +222,12 @@ int SPIRPi::setCount(unsigned int count){
 
      }
 
-     statusVal = ioctl (mFdSPI, SPI_IOC_RD_BITS_PER_WORD, &mBits);
+     statusVal = ioctl (mFdSPI, SPI_IOC_RD_BITS_PER_WORD, &mConfig.bits);
      if(statusVal < 0) {
        return errno;
      }
 
-     statusVal = ioctl (mFdSPI, SPI_IOC_WR_BITS_PER_WORD, &mBits);
+     statusVal = ioctl (mFdSPI, SPI_IOC_WR_BITS_PER_WORD, &mConfig.bits);
      if(statusVal < 0) {
       return errno;
      }
@@ -244,12 +246,12 @@ int SPIRPi::setCount(unsigned int count){
 
 
 
-     statusVal = ioctl (mFdSPI, SPI_IOC_WR_MAX_SPEED_HZ, &mBusSpeed);
+     statusVal = ioctl (mFdSPI, SPI_IOC_WR_MAX_SPEED_HZ, &mConfig.busSpeed);
      if(statusVal < 0) {
       return errno;
      }
 
-     statusVal = ioctl (mFdSPI, SPI_IOC_RD_MAX_SPEED_HZ, &mBusSpeed);
+     statusVal = ioctl (mFdSPI, SPI_IOC_RD_MAX_SPEED_HZ, &mConfig.busSpeed);
      if(statusVal < 0) {
        return errno;
      }
@@ -267,4 +269,12 @@ int SPIRPi::setCount(unsigned int count){
         close(mFdSPI);
         mOpen = false;
         return I_OK;
+ }
+
+ /*---------------------------------------------------------------------------
+  * SPI get Config
+  *--------------------------------------------------------------------------*/
+ SPIConfig_t SPIRPi::getConfig()const{
+
+    return mConfig;
  }

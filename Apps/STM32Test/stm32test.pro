@@ -28,7 +28,7 @@ INCLUDEPATH += /home/user/raspi/sysroot/usr/include \
             ../../Sources/Logger/
 
 
-LIBS+=  -lssd1306 -lwiringPi
+LIBS+=  -lwiringPi
 
 HEADERS += \
     ../../Sources/Interface/interface.h \

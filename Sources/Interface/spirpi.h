@@ -29,7 +29,7 @@
 #define SPI_COUNT_DEFAULT           3000
 
 typedef struct {
-    char *   deviceName;
+    std::string   deviceName;
     unsigned int busSpeed;
     unsigned char bits;
     bool invertCS;
@@ -47,13 +47,11 @@ public:
     virtual int setCount(unsigned int count);
 
     virtual int startTransaction(unsigned char * tx_buffer, size_t const num_tx_bytes, unsigned char * rx_buffer, size_t const num_rx_bytes);
+    SPIConfig_t getConfig()const;
 
 private:
 
-
-    unsigned int mBusSpeed = SPI_RPI_BUSSPEED;
-    unsigned char mBits = SPI_RPI_BITS;
-    bool mInvertCS = 0;
+    SPIConfig_t mConfig;
     unsigned char mMosiBuffer[SPI_RPI_BUFFERSIZE];
     unsigned char mMisoBuffer[SPI_RPI_BUFFERSIZE];
     int mFdSPI = 0;

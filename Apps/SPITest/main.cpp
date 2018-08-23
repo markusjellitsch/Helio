@@ -54,13 +54,6 @@ int main(int argc, char *argv[])
     uartConfig.deviceName = UART_RPI_DEV_FILENAME;
     UARTRpi uart;
 
-    // open uart interface
-    if(uart.openInterface((void*)&uartConfig)==-1){
-        cout << "Couldn't open UART!" << endl;
-        return 0;
-    }
-
-
     // open spi interface
     if (spi.openInterface((void *)&config) == -1){
         cout << "Couldn't open interface!" << endl;

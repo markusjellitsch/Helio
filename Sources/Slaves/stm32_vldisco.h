@@ -211,6 +211,7 @@ public:
     /* RTU statistics */
     RTUStatistic getStatistic() const;
     int printStatistic() const;
+    int setTerminalCursorBack(uint8_t const num)const;
 
     /* Stopwatch to measure time */
     int startTimer();

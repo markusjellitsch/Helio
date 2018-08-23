@@ -26,7 +26,7 @@ using namespace std;
 static char cmd = 0;
 static int reg =1;
 static int16_t val = 1;
-static int frequency = 100;
+static int frequency = 10000;
 
 
 /* parse arguments */
@@ -110,6 +110,15 @@ int main(int argc, char *argv[])
         }
         else cout << "writting holding register: NOK" <<endl;
     break;
+
+    case 't':
+        while(1){
+            success = stm32.updateRegisters();
+            stm32.printStatistic();
+            stm32.setTerminalCursorBack(10);
+
+        }
+
 
     default:
         cout << "command not allowed!" <<endl;

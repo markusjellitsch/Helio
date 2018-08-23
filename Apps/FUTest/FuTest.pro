@@ -34,7 +34,7 @@ HEADERS += \
     ../../Sources/TestUnit/test_runner.h
     Adafruit_GFX.h
 
-LIBS+=  -lssd1306 -lwiringPi
+LIBS+=  -lwiringPi
 
 INCLUDEPATH += /home/user/raspi/sysroot/usr/include \
             /home/user/RPI_COM/Apps/SSD13008Test \
