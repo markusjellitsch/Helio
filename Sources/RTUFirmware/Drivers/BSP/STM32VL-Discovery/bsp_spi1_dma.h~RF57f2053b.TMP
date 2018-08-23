@@ -1,0 +1,42 @@
+/* ************************************************************************** */
+// NAME:    bsp_spi_dma.h
+// AUTHOR:  Markus Jellitsch
+// DATE:    09.1.2018
+// DESCRIPTION: This module provides a SLAVE driver for spi interface with DMA.
+//              All data to be transmitted & received is handled by DMA controller.						
+/* ************************************************************************** */
+
+#ifndef BSP_SPI_DMA_H
+#define BSP_SPI_DMA_H
+
+#include <stdbool.h>
+#include <stdint.h>
+
+
+#define SPI_RX_BUFFER_SIZE	30
+#define SPI_TX_BUFFER_SIZE  256
+
+// callback function pointer definition for rx & tx
+typedef uint8_t (*spi_dma_rx_callback_t)(void);
+typedef uint8_t (*spi_dma_tx_callback_t)(void);
+
+
+// initialize spi interface
+void bsp_spi1_dma_init(spi_dma_tx_callback_t const fp_tx, spi_dma_rx_callback_t const fp_rx);
+
+// write bytes to spi tx buffer 
+uint8_t bsp_spi1_dma_put_byte(uint8_t const data);
+uint8_t bsp_spi1_dma_put_data(uint8_t* data, uint16_t const len);
+
+// read byte from spi rx buffer
+uint8_t bsp_spi1_dma_get_byte(uint8_t* data);
+uint8_t bsp_spi1_dma_get_data(uint8_t* data,uint16_t const bytes);
+
+uint8_t bsp_spi1_dma_set_rx_size(uint16_t const size);
+uint8_t bsp_spi1_dma_set_ready(void);
+
+// enable DMA transmission
+void bsp_spi1_dma_enable_rx(void);
+void bsp_spi1_dma_enable_tx(void);
+
+#endif

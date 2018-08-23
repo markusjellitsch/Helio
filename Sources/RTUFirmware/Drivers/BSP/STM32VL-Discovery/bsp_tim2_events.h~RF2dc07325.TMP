@@ -1,0 +1,62 @@
+/* ************************************************************************** */
+// NAME:    bsp_tim2_events.h
+// AUTHOR:  Markus Jellitsch
+// DATE:    09.1.2018
+// DESCRIPTION: This module provides a driver for event handling		
+/* ************************************************************************** */
+
+#ifndef BSP_TIM2_EVENTS_H
+#define BSP_TIM2_EVENTS_H
+
+#include <stdbool.h>
+#include <stdint.h>
+
+#define TIM2_EVENT_CLOCK_FREQUENCY    24000000 
+
+#define TIM2_EVENT_RESOLUTION_BASE		 (TIM2_EVENT_CLOCK_FREQUENCY / 1000000)
+#define TIM2_EVENT_RESOLUTION_1US      (TIM2_EVENT_RESOLUTION_BASE)
+#define TIM2_EVENT_RESOLUTION_10US     (TIM2_EVENT_RESOLUTION_BASE*10)
+#define TIM2_EVENT_RESOLUTION_100US    (TIM2_EVENT_RESOLUTION_BASE*100)
+#define TIM2_EVENT_RESOLUTION_1MS      (TIM2_EVENT_RESOLUTION_BASE*1000)
+
+#define TIM2_EVENT_NUM_EVENTS 		4
+
+#define TIM2_EVENT1   	0x00
+#define TIM2_EVENT2    	0x01
+#define TIM2_EVENT3    	0x02
+#define TIM2_EVENT4    	0x03
+
+// for this board it is 1 MHz
+#define TIM2_EVENT_PRESCALER_DEFAULT 24 
+
+// function pointer for triggering an event 
+typedef uint8_t (*fp_trigger_t)(void);
+
+// function pointer for event callback (= when the trigger function returns 1, event_callback is called)
+typedef void (*fp_event_callback_t);
+
+typedef struct{
+	uint8_t fire_and_forget;
+	uint16_t const period;
+	fp_trigger_t fp_trigger;
+	fp_event_callback_t fp_event;
+}event_info_t;
+
+// initialize timer2
+uint8_t bsp_tim2_event_init(void);
+
+// start & stop event timer
+uint8_t bsp_tim2_event_start_timer(void);
+uint8_t bsp_tim2_event_stop_timer(void);
+
+
+// register a new event
+uint8_t bsp_tim2_event_register_new_event(uint8_t const channel_nr, fp_trigger_t const trigger, fp_event_callback_t const event_callback, uint8_t fire_and_forget, uint16_t const period);
+
+// clear an event
+uint8_t bsp_tim1_event_clear_event(uint8_t const event_nr);
+
+// manually trigger an event
+uint8_t bsp_tim1_event_trigger_event(uint8_t const event_nr);
+
+#endif

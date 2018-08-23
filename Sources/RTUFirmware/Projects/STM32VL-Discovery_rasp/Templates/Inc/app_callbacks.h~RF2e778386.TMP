@@ -1,0 +1,30 @@
+/* ************************************************************************** */
+// NAME:    app_callback.h
+// AUTHOR:  Markus Jellitsch
+// DATE:    09.1.2018
+// DESCRIPTION: Application specific callbacks & wrapper functions
+/* ************************************************************************** */
+
+#ifndef APP_CALLBACKS_H
+#define APP_CALLBACKS_H
+
+#include "app_globals.h"
+
+
+
+uint8_t app_callback_pwm_cr(uint8_t const function_code, int16_t const reg_val);
+uint8_t app_callback_pwm_sr(uint8_t const function_code, int16_t const reg_val);
+
+// dma callbacks for rx&tx
+uint8_t spi1_dma_rx_callback(void);
+uint8_t spi1_dma_tx_callback(void);
+
+// modbus wrapper 
+uint8_t modbus_tx_wrapper(uint8_t * byte);
+void modbus_rx_wrapper(uint8_t byte);
+
+// initialize modbus registers
+void modbus_register_init(void);
+
+
+#endif
