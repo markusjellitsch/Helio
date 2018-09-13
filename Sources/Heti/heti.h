@@ -20,7 +20,7 @@
 
 #define HETI_ADDRESS                        0x11
 
-#define HETI_NUM_HOLDING_REGISTER  15
+#define HETI_NUM_HOLDING_REGISTER           22
 
 #define HETI_ERROR_RS485_WRITE_FAILED       -2
 #define HETI_ERROR_RS485_READ_FAILED        -3
@@ -64,6 +64,7 @@ public:
 
     /* connect to rs485 serial port */
     int open(RS485Config_t * rs485Config = (RS485Config_t *)&cHetiRS485Config);
+    int close();
 
     /* set logger */
     int setLogger(Logger * const logger);
@@ -113,6 +114,8 @@ public:
     int transaction(uint8_t * txData, unsigned int txLen,uint8_t * rxData,unsigned int rxLen);
     int transaction(ModbusFrame_t & send, ModbusFrame_t * receive);
 
+    /* get the holding register to modifiy description */
+    ModbusHoldingRegister * getHoldingRegisterInstance();
 
 
 private:

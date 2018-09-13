@@ -48,6 +48,9 @@
 #define RTU_CNT_CH4                 (RTU_CNT_BASE + 5)					// period register
 #define RTU_CNT_RES                 (RTU_CNT_BASE + 6)
 
+#define RTU_DAC_BASE                (MODBUS_HOLDING_REG_4020)
+#define RTU_DAC_VOL                 (RTU_DAC_BASE)
+
 #define RTU_SYS_EN_PWM1_Msk         (0x01 << 0)
 #define RTU_SYS_EN_PWM2_Msk         (0x01 << 1)
 #define RTU_SYS_EN_PWM3_Msk         (0x01 << 2)
@@ -85,6 +88,7 @@
 #define RTU_REG_NAME_CNT_CH3        "CNT_CH3"
 #define RTU_REG_NAME_CNT_CH4        "CNT_CH4"
 #define RTU_REG_NAME_CNT_RES        "CNT_RES"
+#define RTU_REG_NAME_DAC_VOL        "DAC_VOL"
 
 #define RTU_REG_DESC_SYS_CR1        "System Control Register Bank 1"
 #define RTU_REG_DESC_SYS_EN         "System Enable Register"
@@ -103,6 +107,7 @@
 #define RTU_REG_DESC_CNT_CH3        "Set counter value for channel 3 "
 #define RTU_REG_DESC_CNT_CH4        "Set counter value for channel 4"
 #define RTU_REG_DESC_CNT_RES        "Set counting resolution to get exact result"
+#define RTU_REG_DESC_DAC_VOL        "Analog Output (DAC)"
 
 #define RTU_ADDRESS                 0x11
 
@@ -184,6 +189,11 @@ public:
     int stopCapture(uint8_t const channel);
     bool isCaptureFinished(uint8_t const channel);
     int getFrequency(uint8_t const channel,uint16_t * value);
+
+    /* analog output generator */
+    int setDACVoltage(uint16_t const voltage_mv);
+    int startDAC();
+    int stopDAC();
 
     /* return member register */
     int16_t getRegister(uint8_t const reg) const;

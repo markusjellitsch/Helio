@@ -66,7 +66,7 @@ int RS485Rpi::writeMulti(unsigned char const slaveAddress,unsigned char * buffer
          clock_gettime(CLOCK_MONOTONIC,&ts);
          uint64_t tmp = (uint64_t)ts.tv_sec * 1000000000U +(uint64_t)ts.tv_nsec;
          tmp-=now;
-         if ((tmp)>= ((531000) * numBytes)){ // TODO: very magic!!
+         if ((tmp)>= ((525000) * numBytes)){ // TODO: very magic!!
              break;
          }
      }
@@ -106,10 +106,10 @@ int RS485Rpi::sendMessage(std::string const & message, unsigned int const numByt
      // flush read FIFO first
      tcflush(mFdRS485,TCIFLUSH);
 
-     while (count <= len && (count <= RS485_RPI_BUFFERSIZE)){
+     while (count < len && (count <= RS485_RPI_BUFFERSIZE)){
 
          // read bytewise
-         int bytes = read(mFdRS485,(void *)mRxBuffer,len);
+         int bytes = read(mFdRS485,(void *)mRxBuffer+count,len);
 
          // exit on error or after timeout
          if (bytes <= 0) break;
@@ -167,7 +167,7 @@ void RS485Rpi::printf(const char * format,...){
     options.c_oflag = 0;
     options.c_lflag = FLUSHO;
     memset(options.c_cc,_POSIX_VDISABLE,NCCS);
-    options.c_cc[VTIME] = config.rxTimeout *10;
+    options.c_cc[VTIME] = config.rxTimeout *5;
     options.c_cc[VMIN] = config.rxBytes;
     tcflush(mFdRS485,TCIFLUSH);
 

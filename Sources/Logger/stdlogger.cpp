@@ -32,4 +32,5 @@ StdLogger::StdLogger(string const & name)
  * --------------------------------------*/
 void StdLogger::DoLog(std::string const & text){
         cout << text << endl;
+
 }

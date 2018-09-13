@@ -63,6 +63,7 @@ int TestRunner::runTest(unsigned int const testNr){
         success = mTestList[testNr]->tearDown();
         TESTRUNASSERT(success);
 
+        log(TEST_SEVERITY_NOTE,"Test completed and succesful!");
         return TEST_OK;
     }
 

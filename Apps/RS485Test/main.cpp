@@ -8,6 +8,7 @@
 #include <iostream>
 #include <string>
 #include <Heti/heti.h>
+#include <unistd.h>
 
 using namespace std;
 
@@ -37,8 +38,10 @@ int main(int argc, char *argv[])
         // Write to a single register
         if (argc ==2){
            // writing to FU
-            int success = heti->writeSingleRegister(2,0);
-            success = heti->writeSingleRegister(1,(uint16_t)atoi(argv[1]));
+            int success = heti->writeSingleRegister(2,1);
+            uint16_t byte = (uint16_t)atoi(argv[1]);
+            usleep(1000000);
+            success = heti->writeSingleRegister(1,byte);
             if (success == HETI_OK){
                 cout << "Write OK!" << endl;
             }

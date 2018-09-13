@@ -86,6 +86,10 @@ int HETI::open(RS485Config_t * rs485Config){
     return success;
 }
 
+int HETI::close(){
+ return mRS485Interface->closeInterface();
+}
+
 
 /*---------------------------------------------------------------------------
  * Set Logger for logging events
@@ -230,13 +234,14 @@ int HETI::writeSingleRegister(uint8_t const reg, int16_t const value){
 
      int error = transaction(sendFrame,&responseFrame);
 
-    string text = "Write Single Register " + to_string(reg);
+    string text = "Write Single Register ";
+    text.append(to_string(reg));
 
     if (error == HETI_OK){
         log(HETI_NOTE,text + " OK!");
     }
     else {
-        log(HETI_ERROR,text + + " NOK!");
+        log(HETI_ERROR,text + " NOK!");
     }
 
 
@@ -262,7 +267,8 @@ int HETI::readSingleRegister(uint8_t const reg,int16_t * value){
      // create modbus frame
      ModbusFrame_t sendFrame = modbus.createFrame(HETI_ADDRESS,MODBUS_FUNC_READHOLDING,data,cNumBytes);
 
-     string text = "Reading Single Register " + reg;
+     string text = "Reading Single Register ";
+     text.append(to_string(reg));
 
      int error = transaction(sendFrame,&responseFrame);
      if (error == HETI_OK){
@@ -632,4 +638,11 @@ int HETI::assertHandler(int errorCode,string const & file, int line){
     log(HETI_ERROR,text);
 
     return HETI_OK;
+}
+
+/*---------------------------------------------------------------------------
+ * Return Holding Register Instance
+ *--------------------------------------------------------------------------*/
+ModbusHoldingRegister * HETI::getHoldingRegisterInstance(){
+    return mHoldingRegisters;
 }

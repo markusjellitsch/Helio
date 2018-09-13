@@ -26,12 +26,15 @@
 #define TEST_DEFAULT_TESTNAME        ("Unknown Test")
 
 // asserting test
-#define  TESTASSERT(x)                                                          \
+#define  TESTASSERT(x,y)                                                        \
 {                                                                               \
+                                                                                 \
+    log(TEST_SEVERITY_NOTE,y);                                             \
     if (x != 0){                                                                \
         assertHandler(x,__FILE__,__LINE__);                                     \
         return x;                                                               \
     }                                                                           \
+    log(TEST_SEVERITY_NOTE,"Check OK");                                         \
 }
 
 // compare test

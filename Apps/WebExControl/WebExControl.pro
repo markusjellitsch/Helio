@@ -5,7 +5,7 @@ CONFIG += c++11
 INSTALLS += target
 target.path = /home/pi/Application
 
-TARGET = heti_test
+TARGET = webex_control
 CONFIG += console
 CONFIG -= app_bundle
 
@@ -18,9 +18,7 @@ SOURCES += main.cpp \
     ../../Sources/Modbus/modbusrtu.cpp \
     ../../Sources/Modbus/holdingregister.cpp \
     ../../Sources/Heti/heti.cpp \
-    ../../Sources/TestUnit/test_unit.cpp \
-    ../../Sources/TestUnit/test_fu.cpp \
-    ../../Sources/TestUnit/test_runner.cpp
+    ../../Sources/Slaves/webex.cpp
 
 HEADERS += \
     ../../Sources/Logger/stdlogger.h \
@@ -30,8 +28,7 @@ HEADERS += \
     ../../Sources/Modbus/modbusrtu.h \
     ../../Sources/Modbus/holdingregister.h \
     ../../Sources/Heti/heti.h \
-    ../../Sources/TestUnit/test_fu.h \
-    ../../Sources/TestUnit/test_runner.h
+    ../../Sources/Slaves/webex.h
     Adafruit_GFX.h
 
 LIBS+=   -lwiringPi

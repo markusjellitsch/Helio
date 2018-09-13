@@ -53,6 +53,7 @@ STM32_VLDISCO::STM32_VLDISCO(SPIRPi * interface){
     mHoldingRegisters->setDescription(RTU_CNT_CH3,RTU_REG_DESC_CNT_CH3);
     mHoldingRegisters->setDescription(RTU_CNT_CH4,RTU_REG_DESC_CNT_CH4);
     mHoldingRegisters->setDescription(RTU_CNT_RES,RTU_REG_DESC_CNT_RES);
+    mHoldingRegisters->setDescription(RTU_DAC_VOL,RTU_REG_DESC_DAC_VOL);
 
    // set default name
     mHoldingRegisters->setName(RTU_SYS_CR1,RTU_REG_NAME_SYS_CR1);
@@ -72,6 +73,7 @@ STM32_VLDISCO::STM32_VLDISCO(SPIRPi * interface){
     mHoldingRegisters->setName(RTU_CNT_CH3,RTU_REG_NAME_CNT_CH3);
     mHoldingRegisters->setName(RTU_CNT_CH4,RTU_REG_NAME_CNT_CH4);
     mHoldingRegisters->setName(RTU_CNT_RES,RTU_REG_NAME_CNT_RES);
+    mHoldingRegisters->setName(RTU_DAC_VOL,RTU_REG_NAME_DAC_VOL);
 
     mStatistic.commandsSent = 0;
     mStatistic.errorsOccured = 0;
@@ -737,6 +739,13 @@ int STM32_VLDISCO::startCapture(uint8_t const channel){
 int STM32_VLDISCO::stopCapture(uint8_t const channel){
 
     int error = clearBit(RTU_SYS_EN,channel);
+    RTUASSERT(error);
+
+    return RTU_OK;
+}
+
+int STM32_VLDISCO::setDACVoltage(uint16_t const voltage_mv){
+    int error = writeSingleRegister(RTU_DAC_VOL,voltage_mv);
     RTUASSERT(error);
 
     return RTU_OK;

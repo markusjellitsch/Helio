@@ -3,9 +3,9 @@ QT -= gui
 
 CONFIG += c++11
 INSTALLS += target
-target.path = /home/pi/Application
+target.path = /home/pi/HelioTests
 
-TARGET = heti_test
+TARGET = fu_test
 CONFIG += console
 CONFIG -= app_bundle
 
