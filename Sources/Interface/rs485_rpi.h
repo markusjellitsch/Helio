@@ -14,7 +14,7 @@
 
 #define RS485_RPI_DEV_FILENAME ((char *)"/dev/ttyAMA0")
 
-#define SPI_RPI_CHIPSELECT_0         d   0
+#define SPI_RPI_CHIPSELECT_0            0
 #define SPI_RPI_CHIPSELECT_1            1
 
 #define RS485_RPI_BUFFERSIZE             256

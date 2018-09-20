@@ -11,6 +11,8 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <stdio.h>
+
 
 
 using namespace std;
@@ -142,6 +144,35 @@ int TestUnit::assertHandler(int errorCode,string const & file, int line){
     text.append(to_string(line));
     text.append(".ERROR CODE:"+ errorCode);
     log(TEST_SEVERITY_ERROR,text);
+
+    return TEST_OK;
+}
+
+std::string TestUnit::readStdin(){
+
+    string str= "";
+
+    cin >>str;
+
+    return str;
+}
+
+int TestUnit::writeStdOut(std::string const &str,bool newline){
+
+    cout << mTestName << ": " << str;
+    if (newline) cout << endl;
+
+    return TEST_OK;
+}
+
+int TestUnit::checkYesNo(std::string const & text){
+
+    writeStdOut(text,false);
+    cout << " ['y'or 'n'] Your Input:";
+    string result = readStdin();
+    if (result != "y"){
+        return -1;
+    }
 
     return TEST_OK;
 }

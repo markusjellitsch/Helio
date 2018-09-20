@@ -2,21 +2,23 @@ QT += core
 QT -= gui
 
 CONFIG += c++11
-
 INSTALLS += target
 target.path = /home/pi/HelioTests
-TARGET = test
+
+TARGET = rgb_test
 CONFIG += console
 CONFIG -= app_bundle
 
 TEMPLATE = app
 
-SOURCES += main.cpp
+SOURCES += main.cpp \
+
 
 HEADERS += \
     ../../Sources/helio.h
 
-LIBS+= -L../heliolib -lhelio -lwiringPi
+
+LIBS+=  -lwiringPi -L../heliolib -lhelio
 
 INCLUDEPATH += /home/user/raspi/sysroot/usr/include \
             /home/user/RPI_COM/Apps/SSD13008Test \
@@ -25,5 +27,5 @@ INCLUDEPATH += /home/user/raspi/sysroot/usr/include \
             ../../Sources \
             ../../Sources/Interface \
             ../../Sources/Slaves\
-            ../../Sources/Logger\
-            ../../Apps/helio/
+            ../../Sources/Logger/
+

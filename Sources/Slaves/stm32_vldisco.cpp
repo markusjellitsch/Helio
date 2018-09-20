@@ -17,6 +17,7 @@
 #include <cassert>
 #include <iomanip>
 #include <ctime>
+#include <unistd.h>
 
 
 using namespace std;
@@ -103,9 +104,6 @@ int STM32_VLDISCO::connect(){
 
     error = compareRegisterValue(RTU_SYS_BOOT,RTU_SYS_BOOT_SEQUENCE);
     RTUASSERT(error);
-
-    RTUASSERT(writeSingleRegister(RTU_SYS_EN,0));
-    RTUASSERT(writeSingleRegister(RTU_PWM_SR,0));
 
     log(RTU_NOTE,"RTU initialization successful!");
 
@@ -345,8 +343,10 @@ int STM32_VLDISCO::writeSingleRegister(uint8_t const reg, int16_t const value){
         log(RTU_ERROR,text + + " NOK!");
     }
 
+    // the RTU has to process write command. so wait a bit
+    usleep(500);
 
-     return error;
+    return error;
  }
 
 /*---------------------------------------------------------------------------

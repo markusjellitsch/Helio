@@ -83,6 +83,7 @@ int HETI::open(RS485Config_t * rs485Config){
     mStatistic.responsesReceived = 0;
     mStatistic.timeoutsOccured = 0;
 
+
     return success;
 }
 
@@ -138,6 +139,10 @@ int HETI::transaction(uint8_t * txData, unsigned int txLen,uint8_t * rxData,unsi
 
     int error = 0;
 
+     if (mRS485Interface == nullptr){
+         log(HETI_ERROR,"Nullpointer! RS485 device not specified!");
+         return HETI_ERROR_NULLPTR;
+     }
     // transmit data
     error = mRS485Interface->writeMulti(0,txData,txLen);
     if (error != I_OK){

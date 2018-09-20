@@ -68,6 +68,7 @@ public:
     // set test names
     int setTestName(std::string const & name);
 
+
 protected:
 
     // log errors
@@ -75,6 +76,10 @@ protected:
 
     // assert handler
     int assertHandler(int errorCode,std::string const & file, int line);
+
+    std::string readStdin();
+    int writeStdOut(std::string const & text,bool newline=true);
+    int checkYesNo(std::string const & text);
 
     // hooks to be implemented
     virtual int doSetup()=0;

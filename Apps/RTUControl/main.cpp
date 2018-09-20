@@ -21,108 +21,47 @@
 
 using namespace std;
 
-static char cmd = 0;
-static int reg =1;
-static int16_t val = 1;
 static int frequency = 5000;
 
+// static argument variables
+char ** argumentList = 0;
+int argumentCnt = 0;
 
 // initialize stm32
-STM32_VLDISCO * stm32;
+static STM32_VLDISCO * stm32;
+static SPIRPi spi;
 
-
-/* parse arguments */
-int parse_args(int argc, char *argv[]){
-
-
-    if (argc >=2) cmd = argv[1][0];
-    if (argc >=3) reg = atoi(argv[2]);
-    if (argc >=4) val = atoi(argv[3]);
-    if (argc >=5) frequency = atoi(argv[4]);
-
-    return 0;
-}
-
-#define TESTASSERT(x)                                                                                       \
-{                                                                                                           \
-    if (x != 0){                                                                                            \
-        std::cout << "TESTASSERT failed in file" << __FILE__ << " in line " << __LINE__ << "." << endl;     \
-        stm32->dumpRegisters(true);                                                                         \
-    }                                                                                                       \
-                                                                                                            \
-}
-
-typedef int8_t (*testFunction_t)(void * param);
-
-uint16_t const cNumTests = 30;
-testFunction_t testTable[cNumTests] ={0};
-
-
-int8_t test1_pwm_channel_infinite(void * param);
-int8_t test2_pwm_channel_one_second(void * param);
-int8_t test3_pwm_channel_10_seconds(void * param);
-int8_t test4_pwm_wait_for_finished(void * param);
-
-void executeTest(int const testNum, testFunction_t test, void * param){
-
-    if (test == nullptr) return;
-
-    int error = test(param);
-
-    cout << "Execute Test " << testNum << "!"<<endl;
-    if (error != 0){
-        cout << "Test" << testNum << "failed with error code << " << error <<"!" << endl;
-
-    }
-    else cout << "Test" << testNum << "succeeded!" << endl;
-
-    cout << endl;
-}
-
-void testMaster(uint16_t const testNum,void * param){
-
-    if (testNum >= cNumTests){
-            cout << "Invalid test number!" << endl;
-            return;
-    }
-
-    if (testTable[testNum] != 0) {
-        int error = testTable[testNum](param);
-        if(error !=0){
-           cout << "Test" << testNum << "failed with error code << " << error <<"!" << endl;
-        }
-        else cout << "Test" << testNum << "succeeded!" << endl;
-
-        cout << endl;
-    }
-
-}
+// command handlers
+int handleHelpCommand();
+int handlePWMCommand();
+int handleCNTCommand();
+int handleDACCommand();
+int handleDumpCommand();
+int handleTestCommand();
 
 int main(int argc, char *argv[])
 {
 
     if (argc < 2){
          cout << "Usage: command <param>" << endl;
+         cout << "NOTE #1: use command help for more info!" << endl;
          return -1;
     }
 
-    int testNum = 0;
-    testTable[testNum++] = test1_pwm_channel_infinite;
-    testTable[testNum++] = test2_pwm_channel_one_second;
-    testTable[testNum++] = test3_pwm_channel_10_seconds;
-    testTable[testNum++] = test4_pwm_wait_for_finished;
+    argumentCnt = argc;
+    argumentList = argv;
 
     StdLogger logger("Cout Logger");
+    logger.setLoggingOption(false,false,false);
 
-
+    if (argc >=2 && strcmp(argv[argc-1],"-v")==0){
+        logger.setLoggingOption(true,true,true);
+    }
     // spi config
     unsigned int speed = (unsigned int)(frequency * 1000);
-    SPIRPi spi;
+
     SPIConfig_t  config = {SPI_RPI_CS1_FILENAME,speed,8,0};
     spi.setCount(5000);
-
-
-     stm32 = new STM32_VLDISCO(&spi);
 
     // open spi interface
     if (spi.openInterface((void *)&config) == -1){
@@ -130,6 +69,7 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+    stm32 = new STM32_VLDISCO(&spi);
     stm32->setLogger(&logger);
 
     int success = stm32->connect();
@@ -138,190 +78,209 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    cout << "Succesfully connected to RTU!" << endl;
+    cout << "RTU connection established!" << endl;
+    cout << "SPI Bus Frequency (KHz):" << speed / 1000 << endl;
+    cout << endl;
 
     if (strcmp(argv[1],"pwm")==0){
-        uint8_t channel = 1;
-        uint16_t period = 0;
-        uint32_t count = 0;
-
-        if (argc >= 3){
-            channel = atoi(argv[2]);
-        }
-
-        if (argc >= 4){
-            period = atoi(argv[3]);
-        }
-
-        if (argc >= 5){
-            count = atoi(argv[4]);
-        }
-
-        stm32->setPWMCount(count);
-        if (period == 0) {
-            stm32->stopPWM(channel);
-             cout << "stopped" << endl;
-        }
-        else stm32->startPWM(channel,period,50);
+        success = handlePWMCommand();
     }
 
-    if (strcmp(argv[1],"cnt")==0){
-        uint8_t channel = 1;
-        uint16_t count = 0;
-
-        if (argc >= 3){
-            channel = atoi(argv[2]);
-        }
-
-        if (argc >= 4){
-            count = atoi(argv[3]);
-             cout << count << endl;
-        }
-
-        logger.setLoggingOption(false,false,false);
-        if (count == 0) {
-            stm32->stopCapture(channel<<4);
-             cout << "Capture stopped" << endl;
-        }
-        else {
-            stm32->setCaptureCount(channel<<4,count);
-            stm32->startCapture(channel<<4);
-            stm32->startTimer();
-            while (!stm32->isCaptureFinished(channel<<4)){
-                usleep(10000);
-                logger.setLoggingOption(false,false,false);
-                cout << "wait for finished..." << endl;
-                stm32->setTerminalCursorBack(1);
-            }
-
-            double elapsed =  stm32->getElapsed();
-            cout << "capture finished!" << endl;
-            cout << "elapsed: " << elapsed << " ms" << endl;
-         }
+    else if (strcmp(argv[1],"cnt")==0){
+       success = handleCNTCommand();
     }
 
-    if (strcmp(argv[1],"test")==0){
-        uint32_t spi_clk = 100000;
+    else if (strcmp(argv[1],"test")==0){
+        success = handleTestCommand();
+     }
 
-        if (argc >= 3){
-            spi_clk = atoi(argv[2]);
+
+    else if (strcmp(argv[1],"dac")==0){
+        success = handleDACCommand();
+    }
+
+    else if (strcmp(argv[1],"dump")==0){
+        success = handleDumpCommand();
+    }
+
+    else{
+        success = handleHelpCommand();
+    }
+
+    if (success == 0){
+        cout << "Command succesfully exectued!" << endl;
+    }
+    else cout << "Command error!" << endl;
+
+    return 0;
+}
+
+
+// handle command PWM
+int handlePWMCommand(){
+
+    uint8_t channel = 1;
+    uint16_t period = 0;
+    uint32_t count = 0;
+
+    if (argumentCnt == 2){
+        cout << "usage command pwm: <channel> <period> <count>" << endl;
+        cout << "NOTE #1: When period=0, the pwm channel will be stopped!" << endl;
+        cout << "NOTE #2: Possible channels: 1,2,3,4" << endl;
+        return -1;
+    }
+
+    // check channel
+    if (argumentCnt >= 3){
+        channel = atoi(argumentList[2]);
+    }
+
+    // check period
+    if (argumentCnt >= 4){
+        period = atoi(argumentList[3]);
+    }
+
+    // check count
+    if (argumentCnt >= 5){
+        count = atoi(argumentList[4]);
+    }
+
+    // check channel
+    channel = 1 << (channel -1);
+    if (channel > 8) channel = 8;
+
+    // enable pwm or disbale
+    stm32->setPWMCount(count);
+    if (period == 0) {
+        stm32->stopPWM(channel);
+        cout << "stopped" << endl;
+    }
+
+    else stm32->startPWM(channel,period,50);
+
+    return 0;
+}
+
+// handle command CNT
+int handleCNTCommand(){
+
+    uint8_t channel = 1;
+    uint16_t count = 0;
+
+    // sanity check
+    if (argumentCnt == 2){
+        cout << "usage command cnt: <channel> <count>" << endl;
+        cout << "NOTE #1: Possible channels: 1,2,3,4" << endl;
+        return -1;
+    }
+
+    // check  channel
+    if (argumentCnt >= 3){
+        channel = atoi(argumentList[2]);
+    }
+
+    // check count
+    if (argumentCnt >= 4){
+        count = atoi(argumentList[3]);
+        cout << count << endl;
+    }
+
+    channel = 1 << (channel-1);
+    channel = channel << 4;
+
+    // enable or disable freq channel
+    if (count == 0) {
+        stm32->stopCapture(channel);
+        cout << "Capture stopped" << endl;
+    }
+    else {
+        stm32->setCaptureCount(channel,count);
+        stm32->startCapture(channel);
+        stm32->startTimer();
+        while (!stm32->isCaptureFinished(channel)){
+            usleep(10000);
+            cout << "wait for finished..." << endl;
+            stm32->setTerminalCursorBack(1);
         }
 
-        logger.setLoggingOption(false,false,false);
-        config.busSpeed = spi_clk*1000;
-        spi.openInterface(&config);
+        double elapsed =  stm32->getElapsed();
+        cout << "capture finished!" << endl;
+        cout << "elapsed: " << elapsed << " ms" << endl;
+     }
 
-        while (1){
-               stm32->updateRegisters();
-               stm32->printStatistic();
-               stm32->setTerminalCursorBack(10);
-        }
-      }
+    return 0;
+}
 
-        if (strcmp(argv[1],"dac")==0){
-            uint16_t voltage = 1000;
+// handle command DAC
+int handleDACCommand(){
+    uint16_t voltage = 1000;
 
-            if (argc >= 3){
-                voltage = atoi(argv[2]);
-            }
+    if (argumentCnt == 2){
+      cout << "usage command dac: <volatage>"<< endl;
+      return -1;
+    }
 
-            logger.setLoggingOption(false,false,false);
+    if (argumentCnt >= 3){
+        voltage = atoi(argumentList[2]);
+    }
 
-            if (voltage > 3300){
-                voltage = 3300;
-                cout << "DAC voltage trunacated to " << voltage <<" mV" << endl;
-            }
+    if (voltage > 3300){
+        voltage = 3300;
+        cout << "DAC voltage trunacated to " << voltage <<" mV" << endl;
+    }
 
-            cout << "Set DAC voltage: " << voltage << "mV"<< endl;
-           int success =  stm32->setDACVoltage(voltage);
-           if (success == RTU_OK){
-               cout << "Setting voltage for DAC succesful!"<<endl;
-           }
-           else cout << "Couldn't set voltage for DAC!"<<endl;
+   cout << "Set DAC voltage: " << voltage << "mV"<< endl;
+   int success =  stm32->setDACVoltage(voltage);
+   if (success == RTU_OK){
+       cout << "Setting voltage for DAC succesful!"<<endl;
+   }
+   else cout << "Couldn't set voltage for DAC!"<<endl;
 
+   return 0;
+}
+
+// handle command test
+int handleTestCommand(){
+    uint32_t spi_clk = 100000;
+
+    if (argumentCnt >= 3){
+        spi_clk = atoi(argumentList[2]);
+    }
+
+    SPIConfig_t  config = {SPI_RPI_CS1_FILENAME,0,8,0};
+    config.busSpeed = spi_clk*1000;
+    spi.openInterface(&config);
+
+    while (1){
+           stm32->updateRegisters();
+           stm32->printStatistic();
+           stm32->setTerminalCursorBack(10);
     }
 
     return 0;
 }
 
-
-int8_t test1_pwm_channel_infinite(void * param){
-
-    stm32->resetRegisters();
-    uint16_t channel = *((uint8_t *)(param));
-
-    stm32->setPWMCount(0);
-    stm32->startPWM(channel,1000,50);
-    TESTASSERT(stm32->compareSet(RTU_SYS_EN,channel));
-    TESTASSERT(stm32->compareRegisterValue(RTU_PWM_CNT,1000,1));
-    TESTASSERT(stm32->compareRegisterValue(RTU_PWM_DUT,50,1));
+// handle command dump
+int handleDumpCommand(){
 
     stm32->dumpRegisters(true);
-    sleep(1);
-    stm32->stopPWM(channel);
-    TESTASSERT(stm32->compareZero(RTU_PWM_CR,channel));
-    stm32->dumpRegisters(true);
-
     return 0;
 }
 
-int8_t test2_pwm_channel_one_second(void * param){
+// handle Command help;
+int handleHelpCommand(){
 
-    stm32->resetRegisters();
-
-    uint16_t channel = *((uint8_t *)(param));
-    stm32->setPWMCount(1000);
-    stm32->startPWM(channel,1000,50);
-    TESTASSERT(stm32->compareSet(RTU_SYS_EN,channel));
-    TESTASSERT(stm32->compareRegisterValue(RTU_PWM_CNT,1000,1));
-    TESTASSERT(stm32->compareRegisterValue(RTU_PWM_DUT,50,1));
-
-    stm32->dumpRegisters(true);
-    sleep(2);
-    TESTASSERT(stm32->compareSet(RTU_PWM_SR,channel));
-
-    return 0;
-}
-
-int8_t test3_pwm_channel_10_seconds(void * param){
-
-    stm32->resetRegisters();
-    stm32->dumpRegisters();
-
-    uint16_t channel = *((uint8_t *)(param));
-    stm32->setPWMCount(10000);
-    stm32->startPWM(channel,1000,40);
-    TESTASSERT(stm32->compareSet(RTU_SYS_EN,channel));
-    TESTASSERT(stm32->compareRegisterValue(RTU_PWM_CNT,10000,1));
-    TESTASSERT(stm32->compareRegisterValue(RTU_PWM_DUT,40,1));
-
-    stm32->dumpRegisters(true);
-    sleep(10);
-    TESTASSERT(stm32->compareSet(RTU_PWM_SR,channel));
+    cout << "Possible Commands:" << endl;
+    cout << "   * pwm <channel> <period> <count>" << endl;
+    cout << "   * cnt <channel> <count>" << endl;
+    cout << "   * dump" <<endl;
+    cout << "   * test" << endl;
+    cout << "   * help" << endl;
 
     return 0;
 }
 
 
-int8_t test4_pwm_wait_for_finished(void * param){
 
-    stm32->resetRegisters();
-
-    uint16_t channel = *((uint8_t *)(param));
-    stm32->setPWMCount(30000);
-    stm32->startPWM(channel,1000,40);
-
-    cout << "Waiting for PWM to finish ..." << endl;
-
-    while (stm32->compareSet(RTU_PWM_SR,channel) != RTU_OK){
-     sleep(1);
-    }
-
-    cout << "PWM stopped!" << endl;
-
-    TESTASSERT(stm32->compareSet(RTU_PWM_SR,channel));
-
-    return 0;
-}
 
 
