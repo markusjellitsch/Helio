@@ -49,7 +49,6 @@ SOURCES       = ../../Sources/Interface/uart_rpi.cpp \
 		../../Sources/Interface/spirpi.cpp \
 		../../Sources/Interface/rs485_rpi.cpp \
 		../../Sources/Interface/i2crpi.cpp \
-		../../Sources/Slaves/stm32_vldisco.cpp \
 		../../Sources/Logger/logger.cpp \
 		../../Sources/Logger/stdlogger.cpp \
 		../../Sources/Heti/heti.cpp \
@@ -60,12 +59,12 @@ SOURCES       = ../../Sources/Interface/uart_rpi.cpp \
 		../../Sources/TestUnit/test_runner.cpp \
 		../../Sources/TestUnit/test_rgb.cpp \
 		../../Sources/TestUnit/test_fu.cpp \
-		../../Sources/Slaves/webex.cpp 
+		../../Sources/Slaves/webex.cpp \
+		../../Sources/Slaves/rtu.cpp 
 OBJECTS       = uart_rpi.o \
 		spirpi.o \
 		rs485_rpi.o \
 		i2crpi.o \
-		stm32_vldisco.o \
 		logger.o \
 		stdlogger.o \
 		heti.o \
@@ -76,7 +75,8 @@ OBJECTS       = uart_rpi.o \
 		test_runner.o \
 		test_rgb.o \
 		test_fu.o \
-		webex.o
+		webex.o \
+		rtu.o
 DIST          = ../../../raspi/qt5/mkspecs/features/spec_pre.prf \
 		../../../raspi/qt5/mkspecs/common/unix.conf \
 		../../../raspi/qt5/mkspecs/common/linux.conf \
@@ -147,7 +147,6 @@ DIST          = ../../../raspi/qt5/mkspecs/features/spec_pre.prf \
 		../../Sources/Interface/rs485_rpi.h \
 		../../Sources/Interface/interface.h \
 		../../Sources/Interface/i2crpi.h \
-		../../Sources/Slaves/stm32_vldisco.h \
 		../../Sources/Logger/stdlogger.h \
 		../../Sources/Logger/logger.h \
 		../../Sources/Heti/heti.h \
@@ -159,11 +158,11 @@ DIST          = ../../../raspi/qt5/mkspecs/features/spec_pre.prf \
 		../../Sources/TestUnit/test_runner.h \
 		../../Sources/TestUnit/test_rgb.h \
 		../../Sources/TestUnit/test_fu.h \
-		../../Sources/Slaves/webex.h ../../Sources/Interface/uart_rpi.cpp \
+		../../Sources/Slaves/webex.h \
+		../../Sources/Slaves/rtu.h ../../Sources/Interface/uart_rpi.cpp \
 		../../Sources/Interface/spirpi.cpp \
 		../../Sources/Interface/rs485_rpi.cpp \
 		../../Sources/Interface/i2crpi.cpp \
-		../../Sources/Slaves/stm32_vldisco.cpp \
 		../../Sources/Logger/logger.cpp \
 		../../Sources/Logger/stdlogger.cpp \
 		../../Sources/Heti/heti.cpp \
@@ -174,7 +173,8 @@ DIST          = ../../../raspi/qt5/mkspecs/features/spec_pre.prf \
 		../../Sources/TestUnit/test_runner.cpp \
 		../../Sources/TestUnit/test_rgb.cpp \
 		../../Sources/TestUnit/test_fu.cpp \
-		../../Sources/Slaves/webex.cpp
+		../../Sources/Slaves/webex.cpp \
+		../../Sources/Slaves/rtu.cpp
 QMAKE_TARGET  = helio
 DESTDIR       = 
 TARGET        = libhelio.a
@@ -339,8 +339,8 @@ dist: distdir FORCE
 distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
-	$(COPY_FILE) --parents ../../Sources/Interface/uart_rpi.h ../../Sources/Interface/spirpi.h ../../Sources/Interface/rs485_rpi.h ../../Sources/Interface/interface.h ../../Sources/Interface/i2crpi.h ../../Sources/Slaves/stm32_vldisco.h ../../Sources/Logger/stdlogger.h ../../Sources/Logger/logger.h ../../Sources/Heti/heti.h ../../Sources/Modbus/modbusrtu.h ../../Sources/Modbus/holdingregister.h ../../Sources/helio.h ../../Sources/TestUnit/test_vtx.h ../../Sources/TestUnit/test_unit.h ../../Sources/TestUnit/test_runner.h ../../Sources/TestUnit/test_rgb.h ../../Sources/TestUnit/test_fu.h ../../Sources/Slaves/webex.h $(DISTDIR)/
-	$(COPY_FILE) --parents ../../Sources/Interface/uart_rpi.cpp ../../Sources/Interface/spirpi.cpp ../../Sources/Interface/rs485_rpi.cpp ../../Sources/Interface/i2crpi.cpp ../../Sources/Slaves/stm32_vldisco.cpp ../../Sources/Logger/logger.cpp ../../Sources/Logger/stdlogger.cpp ../../Sources/Heti/heti.cpp ../../Sources/Modbus/modbusrtu.cpp ../../Sources/Modbus/holdingregister.cpp ../../Sources/TestUnit/test_vtx.cpp ../../Sources/TestUnit/test_unit.cpp ../../Sources/TestUnit/test_runner.cpp ../../Sources/TestUnit/test_rgb.cpp ../../Sources/TestUnit/test_fu.cpp ../../Sources/Slaves/webex.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents ../../Sources/Interface/uart_rpi.h ../../Sources/Interface/spirpi.h ../../Sources/Interface/rs485_rpi.h ../../Sources/Interface/interface.h ../../Sources/Interface/i2crpi.h ../../Sources/Logger/stdlogger.h ../../Sources/Logger/logger.h ../../Sources/Heti/heti.h ../../Sources/Modbus/modbusrtu.h ../../Sources/Modbus/holdingregister.h ../../Sources/helio.h ../../Sources/TestUnit/test_vtx.h ../../Sources/TestUnit/test_unit.h ../../Sources/TestUnit/test_runner.h ../../Sources/TestUnit/test_rgb.h ../../Sources/TestUnit/test_fu.h ../../Sources/Slaves/webex.h ../../Sources/Slaves/rtu.h $(DISTDIR)/
+	$(COPY_FILE) --parents ../../Sources/Interface/uart_rpi.cpp ../../Sources/Interface/spirpi.cpp ../../Sources/Interface/rs485_rpi.cpp ../../Sources/Interface/i2crpi.cpp ../../Sources/Logger/logger.cpp ../../Sources/Logger/stdlogger.cpp ../../Sources/Heti/heti.cpp ../../Sources/Modbus/modbusrtu.cpp ../../Sources/Modbus/holdingregister.cpp ../../Sources/TestUnit/test_vtx.cpp ../../Sources/TestUnit/test_unit.cpp ../../Sources/TestUnit/test_runner.cpp ../../Sources/TestUnit/test_rgb.cpp ../../Sources/TestUnit/test_fu.cpp ../../Sources/Slaves/webex.cpp ../../Sources/Slaves/rtu.cpp $(DISTDIR)/
 
 
 clean: compiler_clean 
@@ -684,125 +684,6 @@ i2crpi.o: ../../Sources/Interface/i2crpi.cpp ../../Sources/Interface/i2crpi.h \
 		../../../raspi/sysroot/usr/include/time.h \
 		../../../raspi/sysroot/usr/include/errno.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o i2crpi.o ../../Sources/Interface/i2crpi.cpp
-
-stm32_vldisco.o: ../../Sources/Slaves/stm32_vldisco.cpp ../../Sources/Slaves/stm32_vldisco.h \
-		../../Sources/Interface/spirpi.h \
-		../../Sources/Interface/interface.h \
-		../../../raspi/sysroot/usr/include/stdint.h \
-		../../../raspi/sysroot/usr/include/features.h \
-		../../../raspi/sysroot/usr/include/stdc-predef.h \
-		../../../raspi/sysroot/usr/include/stdlib.h \
-		../../../raspi/sysroot/usr/include/xlocale.h \
-		../../../raspi/sysroot/usr/include/alloca.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/string \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/stringfwd.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/memoryfwd.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/char_traits.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/stl_algobase.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/functexcept.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/exception_defines.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/cpp_type_traits.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/ext/type_traits.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/ext/numeric_traits.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/stl_pair.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/move.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/concept_check.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/boost_concept_check.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/stl_iterator_base_types.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/type_traits \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/c++0x_warning.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/stl_iterator_base_funcs.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/debug/debug.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/debug/macros.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/debug/functions.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/debug/formatter.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/typeinfo \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/exception \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/atomic_lockfree_defines.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/exception_ptr.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/nested_exception.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/hash_bytes.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/stl_iterator.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/parallel/algobase.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/parallel/base.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/stl_function.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/backward/binders.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/parallel/features.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/parallel/basic_iterator.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/parallel/parallel.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/parallel/compiletime_settings.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/cstdio \
-		../../../raspi/sysroot/usr/include/stdio.h \
-		../../../raspi/sysroot/usr/include/libio.h \
-		../../../raspi/sysroot/usr/include/_G_config.h \
-		../../../raspi/sysroot/usr/include/wchar.h \
-		../../../raspi/sysroot/usr/include/wctype.h \
-		../../../raspi/sysroot/usr/include/endian.h \
-		../../../raspi/sysroot/usr/include/gconv.h \
-		../../../raspi/sysroot/usr/include/getopt.h \
-		../../../raspi/sysroot/usr/include/ctype.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/parallel/types.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/cstdlib \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/limits \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/tr1/cstdint \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/parallel/tags.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/parallel/settings.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/parallel/algorithmfwd.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/parallel/find.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/parallel/compatibility.h \
-		../../../raspi/sysroot/usr/include/sched.h \
-		../../../raspi/sysroot/usr/include/time.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/parallel/equally_split.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/parallel/find_selectors.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/postypes.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/cwchar \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/cstdint \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/allocator.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/localefwd.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/iosfwd \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/cctype \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/ostream_insert.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/cxxabi_forced.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/range_access.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/basic_string.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/ext/atomicity.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/initializer_list \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/ext/string_conversions.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/cerrno \
-		../../../raspi/sysroot/usr/include/errno.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/functional_hash.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/basic_string.tcc \
-		../../Sources/Modbus/modbusrtu.h \
-		../../Sources/Modbus/holdingregister.h \
-		../../Sources/Logger/logger.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/ctime \
-		../../../raspi/sysroot/usr/include/wiringPi.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/iostream \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/ostream \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/ios \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/ios_base.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/locale_classes.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/locale_classes.tcc \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/streambuf \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/streambuf.tcc \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/basic_ios.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/locale_facets.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/cwctype \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/streambuf_iterator.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/locale_facets.tcc \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/basic_ios.tcc \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/ostream.tcc \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/istream \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/istream.tcc \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/cassert \
-		../../../raspi/sysroot/usr/include/assert.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/iomanip \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/locale \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/locale_facets_nonio.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/codecvt.h \
-		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/locale_facets_nonio.tcc \
-		../../../raspi/sysroot/usr/include/unistd.h
-	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o stm32_vldisco.o ../../Sources/Slaves/stm32_vldisco.cpp
 
 logger.o: ../../Sources/Logger/logger.cpp ../../Sources/Logger/logger.h \
 		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/string \
@@ -1657,7 +1538,7 @@ test_vtx.o: ../../Sources/TestUnit/test_vtx.cpp ../../Sources/TestUnit/test_vtx.
 		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/functional_hash.h \
 		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/basic_string.tcc \
 		../../Sources/Logger/logger.h \
-		../../Sources/Slaves/stm32_vldisco.h \
+		../../Sources/Slaves/rtu.h \
 		../../Sources/Interface/spirpi.h \
 		../../Sources/Interface/interface.h \
 		../../Sources/Modbus/modbusrtu.h \
@@ -2267,6 +2148,125 @@ webex.o: ../../Sources/Slaves/webex.cpp ../../Sources/Heti/heti.h \
 		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/codecvt.h \
 		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/locale_facets_nonio.tcc
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o webex.o ../../Sources/Slaves/webex.cpp
+
+rtu.o: ../../Sources/Slaves/rtu.cpp ../../Sources/Slaves/rtu.h \
+		../../Sources/Interface/spirpi.h \
+		../../Sources/Interface/interface.h \
+		../../../raspi/sysroot/usr/include/stdint.h \
+		../../../raspi/sysroot/usr/include/features.h \
+		../../../raspi/sysroot/usr/include/stdc-predef.h \
+		../../../raspi/sysroot/usr/include/stdlib.h \
+		../../../raspi/sysroot/usr/include/xlocale.h \
+		../../../raspi/sysroot/usr/include/alloca.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/string \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/stringfwd.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/memoryfwd.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/char_traits.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/stl_algobase.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/functexcept.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/exception_defines.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/cpp_type_traits.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/ext/type_traits.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/ext/numeric_traits.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/stl_pair.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/move.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/concept_check.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/boost_concept_check.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/stl_iterator_base_types.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/type_traits \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/c++0x_warning.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/stl_iterator_base_funcs.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/debug/debug.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/debug/macros.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/debug/functions.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/debug/formatter.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/typeinfo \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/exception \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/atomic_lockfree_defines.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/exception_ptr.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/nested_exception.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/hash_bytes.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/stl_iterator.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/parallel/algobase.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/parallel/base.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/stl_function.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/backward/binders.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/parallel/features.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/parallel/basic_iterator.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/parallel/parallel.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/parallel/compiletime_settings.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/cstdio \
+		../../../raspi/sysroot/usr/include/stdio.h \
+		../../../raspi/sysroot/usr/include/libio.h \
+		../../../raspi/sysroot/usr/include/_G_config.h \
+		../../../raspi/sysroot/usr/include/wchar.h \
+		../../../raspi/sysroot/usr/include/wctype.h \
+		../../../raspi/sysroot/usr/include/endian.h \
+		../../../raspi/sysroot/usr/include/gconv.h \
+		../../../raspi/sysroot/usr/include/getopt.h \
+		../../../raspi/sysroot/usr/include/ctype.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/parallel/types.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/cstdlib \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/limits \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/tr1/cstdint \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/parallel/tags.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/parallel/settings.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/parallel/algorithmfwd.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/parallel/find.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/parallel/compatibility.h \
+		../../../raspi/sysroot/usr/include/sched.h \
+		../../../raspi/sysroot/usr/include/time.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/parallel/equally_split.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/parallel/find_selectors.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/postypes.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/cwchar \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/cstdint \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/allocator.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/localefwd.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/iosfwd \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/cctype \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/ostream_insert.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/cxxabi_forced.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/range_access.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/basic_string.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/ext/atomicity.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/initializer_list \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/ext/string_conversions.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/cerrno \
+		../../../raspi/sysroot/usr/include/errno.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/functional_hash.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/basic_string.tcc \
+		../../Sources/Modbus/modbusrtu.h \
+		../../Sources/Modbus/holdingregister.h \
+		../../Sources/Logger/logger.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/ctime \
+		../../../raspi/sysroot/usr/include/wiringPi.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/iostream \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/ostream \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/ios \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/ios_base.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/locale_classes.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/locale_classes.tcc \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/streambuf \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/streambuf.tcc \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/basic_ios.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/locale_facets.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/cwctype \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/streambuf_iterator.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/locale_facets.tcc \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/basic_ios.tcc \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/ostream.tcc \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/istream \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/istream.tcc \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/cassert \
+		../../../raspi/sysroot/usr/include/assert.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/iomanip \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/locale \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/locale_facets_nonio.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/codecvt.h \
+		../../../raspi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/arm-linux-gnueabihf/include/c++/4.8.3/bits/locale_facets_nonio.tcc \
+		../../../raspi/sysroot/usr/include/unistd.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o rtu.o ../../Sources/Slaves/rtu.cpp
 
 ####### Install
 
