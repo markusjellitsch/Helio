@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------
-// NAME         : stm32_vldisco.h
+// NAME         : RTU.h
 // AUTHOR       : Markus Jellitsch
 // DATE         : 6.02.2018
 // DESCRIPTION  : This is the implementation of the RTU which are connected via
@@ -7,10 +7,10 @@
 //                count frequency and has other functionality.
 // -----------------------------------------------------------------------
 
-#ifndef STM32_VLDISCO_H
-#define STM32_VLDISCO_H
+#ifndef RTU_H
+#define RTU_H
 
-#include "spirpi.h"
+#include "Interface/spirpi.h"
 #include "Modbus/modbusrtu.h"
 #include "Modbus/holdingregister.h"
 #include "Logger/logger.h"
@@ -24,6 +24,9 @@
 #define RTU_SYS_BOOT_SEQUENCE       0x4711
 
 #define RTU_DRY_TIMEOUT_MS          10
+
+#define RTU_SPI_BUS_SPEED_KHZ       5000
+#define RTU_SPI_DEV_FILE            SPI_RPI_CS1_FILENAME
 
 #define RTU_SYS_BASE_REG            (MODBUS_HOLDING_REG_4001)
 #define RTU_SYS_CR1					(RTU_SYS_BASE_REG)
@@ -130,8 +133,8 @@
 
 
 #define RTU_ERROR                         1
-#define RTU_NOTE                          2
-
+#define RTU_VERBOSE                       2
+#define RTU_MESSAGE                       3
 
 
 
@@ -152,16 +155,19 @@ typedef struct {
 }RTUStatistic;
 
 
-class STM32_VLDISCO
+class RTU
 {
 public:
 
-    /* constructor */
-    STM32_VLDISCO(SPIRPi * interface);
-    ~STM32_VLDISCO();
+    /* return singelton and reset */
+    static RTU * getInstance();
+    static int releaseInstance();
 
     /* connect to rtu */
-    int connect();
+    int connect(SPIConfig_t * spiConfig=nullptr);
+    int disconnect();
+
+    int setSPIInterface(SPIRPi * interface);
 
     /* run a test */
     int testPerformance(unsigned int const  readCount, unsigned int const writeCount);
@@ -242,11 +248,20 @@ private:
     /* assert handler */
     int assertHandler(int errorCode,std::string const & file, int line);
 
+    /* private ctor & dtor */
+    ~RTU();
+    RTU();
+
     ModbusHoldingRegister * mHoldingRegisters=nullptr;
     RTUStatistic mStatistic;
     SPIRPi * mSPIInterface=nullptr;
     double mStopwatchCounter=-1;
     Logger * mLogger=nullptr;
+
+    bool mConnected = false;
+
+    /* instance */
+    static RTU * mInstance;
 };
 
-#endif // STM32_VLDISCO_H
+#endif // RTU_H

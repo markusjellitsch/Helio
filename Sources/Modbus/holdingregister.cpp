@@ -20,9 +20,10 @@ using namespace std;
 *--------------------------------------------------------------------------*/
 ModbusHoldingRegister::ModbusHoldingRegister(int const size){
      if (size != 0){
-
          mRegisters = new holding_register_t[size];
      }
+
+     for (int i = 0;i<size;i++)mRegisters[i].value = 0;
 
      mNumRegs = size;
      assert(mRegisters != nullptr);

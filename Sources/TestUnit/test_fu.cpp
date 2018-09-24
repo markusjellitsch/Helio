@@ -22,9 +22,8 @@ using namespace std;
 int TestFU::doSetup(){
 
     // open the interface
-    int success = HETI::GetInstance()->open();
-    if (success == HETI_OK) return TEST_OK;
-    return success;
+    TESTASSERT(HETI::getInstance()->open(),"Connect to Heti");
+    return TEST_OK;
 }
 
 // -----------------------------------
@@ -32,7 +31,7 @@ int TestFU::doSetup(){
 // -----------------------------------
 int TestFU::doTearDown(){
 
-    TESTASSERT(HETI::GetInstance()->close(),"Close Heti");
+    TESTASSERT(HETI::getInstance()->releaseInstance(),"Close Heti");
     return TEST_OK;
 }
 
@@ -44,16 +43,16 @@ int TestFU::doRunTest(){
     int16_t val = 0;
 
     // Read from register 0;
-    TESTASSERT(HETI::GetInstance()->readSingleRegister(0,&val),"Reading Holding Reg 0");
+    TESTASSERT(HETI::getInstance()->readSingleRegister(0,&val),"Reading Holding Reg 0");
 
     // Compare register
-    TESTASSERT(HETI::GetInstance()->compareRegisterValue(21,1,true),"Holding Reg 21=1");
+    TESTASSERT(HETI::getInstance()->compareRegisterValue(21,1,true),"Holding Reg 21=1");
 
     // Write holding register
-    TESTASSERT(HETI::GetInstance()->writeSingleRegister(1,2),"Write Holding 1 val=2");
+    TESTASSERT(HETI::getInstance()->writeSingleRegister(1,2),"Write Holding 1 val=2");
 
     // read back holding reg 2
-    TESTASSERT(HETI::GetInstance()->compareRegisterValue(1,2,true),"Holding Reg 1=2");
+    TESTASSERT(HETI::getInstance()->compareRegisterValue(1,2,true),"Holding Reg 1=2");
 
     return TEST_OK;
 }

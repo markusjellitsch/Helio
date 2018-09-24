@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------
-// NAME         : stm32_vldisco.cpp
+// NAME         : RTU.cpp
 // AUTHOR       : Markus Jellitsch
 // DATE         : 6.02.2018
 // DESCRIPTION  : This is the implementation of the RTU which are connected via
@@ -7,7 +7,7 @@
 //                count frequency and has other functionality.
 // -----------------------------------------------------------------------
 
-#include "stm32_vldisco.h"
+#include "rtu.h"
 #include "wiringPi.h"
 #include "Modbus/holdingregister.h"
 #include "Logger/logger.h"
@@ -19,15 +19,44 @@
 #include <ctime>
 #include <unistd.h>
 
-
 using namespace std;
+
+RTU * RTU::mInstance = nullptr;
+
+/*---------------------------------------------------------------------------
+ *  Create and Return the singelton
+ *--------------------------------------------------------------------------*/
+RTU * RTU::getInstance(){
+
+    // create if not existing
+    if (mInstance == nullptr){
+        mInstance = new RTU;
+        assert(mInstance != nullptr);
+    }
+
+    return mInstance;
+}
+
+int RTU::releaseInstance(){
+
+    if (mInstance == nullptr){
+        return RTU_ERROR_NULLPTR;
+    }
+
+    delete mInstance;
+    mInstance = nullptr;
+
+    return RTU_OK;
+}
+
 
 /*---------------------------------------------------------------------------
  * Constructor. Initialize holding registers and set SPI interface
  *--------------------------------------------------------------------------*/
-STM32_VLDISCO::STM32_VLDISCO(SPIRPi * interface){
+RTU::RTU(){
 
-    mSPIInterface = interface;
+    mConnected = false;
+
     // config raspi pins with wiringPi library
     wiringPiSetup();
     pinMode(SPI_SLAVE_DRY_PIN,INPUT);
@@ -35,6 +64,7 @@ STM32_VLDISCO::STM32_VLDISCO(SPIRPi * interface){
 
     mHoldingRegisters = new ModbusHoldingRegister(RTU_NUM_HOLDING_REGISTER);
     assert(mHoldingRegisters != nullptr);
+    for (int i = 0; i <RTU_NUM_HOLDING_REGISTER;i++)mHoldingRegisters->setValue(i,0);
 
     // set default description
     mHoldingRegisters->setDescription(RTU_SYS_CR1,RTU_REG_DESC_SYS_CR1);
@@ -86,10 +116,16 @@ STM32_VLDISCO::STM32_VLDISCO(SPIRPi * interface){
     mLogger = nullptr;
 }
 
-STM32_VLDISCO::~STM32_VLDISCO(){
+RTU::~RTU(){
+
+    // close SPI
+    disconnect();
 
     delete mHoldingRegisters;
+    mHoldingRegisters = nullptr;
+
     mLogger = nullptr;
+
     mStopwatchCounter = -1;
 }
 
@@ -97,15 +133,62 @@ STM32_VLDISCO::~STM32_VLDISCO(){
  * Connect to RTU by reading a special register. This register must contain
  * a specified value. Otherwise connection goes wrong
  *--------------------------------------------------------------------------*/
-int STM32_VLDISCO::connect(){
+int RTU::connect(SPIConfig_t * spiConfig){
 
-    int error = updateRegisters();
+    SPIConfig_t config;
+    config.bits = 8;
+    config.busSpeed = RTU_SPI_BUS_SPEED_KHZ;
+    config.deviceName = RTU_SPI_DEV_FILE;
+    config.invertCS = 0;
+
+    if (spiConfig != nullptr){
+        config.bits = spiConfig->bits;
+        config.busSpeed = spiConfig->busSpeed;
+        config.deviceName = spiConfig->deviceName;
+        config.invertCS = spiConfig->invertCS;
+    }
+
+    int error = 0;
+
+    // close existing connection
+    if (mSPIInterface != nullptr){
+       RTUASSERT(disconnect());
+    }
+
+    mSPIInterface = new SPIRPi;
+
+    error = mSPIInterface->openInterface(&config);
+    RTUASSERT(error);
+
+    error = updateRegisters();
     RTUASSERT(error);
 
     error = compareRegisterValue(RTU_SYS_BOOT,RTU_SYS_BOOT_SEQUENCE);
     RTUASSERT(error);
 
-    log(RTU_NOTE,"RTU initialization successful!");
+    log(RTU_VERBOSE,"RTU initialization successful!");
+
+    mConnected = true;
+
+    return RTU_OK;
+}
+
+/*---------------------------------------------------------------------------
+ * Connect to RTU by reading a special register. This register must contain
+ * a specified value. Otherwise connection goes wrong
+ *--------------------------------------------------------------------------*/
+int RTU::disconnect(){
+
+    if (mSPIInterface == nullptr){
+        mConnected = false;
+        return RTU_OK;
+    }
+
+    // close interface
+    RTUASSERT(mSPIInterface->closeInterface());
+    delete mSPIInterface;
+    mSPIInterface = nullptr;
+    mConnected = false;
 
     return RTU_OK;
 }
@@ -113,13 +196,13 @@ int STM32_VLDISCO::connect(){
 /*---------------------------------------------------------------------------
  * Testing SPI performance between RTU and Raspberry Pi
  *--------------------------------------------------------------------------*/
- int STM32_VLDISCO::testPerformance(unsigned int const  readCount, unsigned int const writeCount){
+ int RTU::testPerformance(unsigned int const  readCount, unsigned int const writeCount){
 
      int error = 0;
      int16_t value = 0;
 
      // testing command read holding
-     log(RTU_NOTE,"Reading Holding Register Test!");
+     log(RTU_VERBOSE,"Reading Holding Register Test!");
      for (unsigned int i = 0; i < readCount;i++){
         error = readSingleRegister(RTU_SYS_BOOT,&value);
         RTUASSERT(error);
@@ -128,7 +211,7 @@ int STM32_VLDISCO::connect(){
      }
 
     // testing command write holding
-    log(RTU_NOTE,"Write Holding Register Test!");
+    log(RTU_VERBOSE,"Write Holding Register Test!");
     for (unsigned int i = 0;i<writeCount;i++){
          error = writeSingleRegister(RTU_SYS_CR1,0);
          RTUASSERT(error);
@@ -143,7 +226,7 @@ int STM32_VLDISCO::connect(){
 /*---------------------------------------------------------------------------
  * Set Logger for logging events
  *--------------------------------------------------------------------------*/
-int STM32_VLDISCO::setLogger(Logger * const logger){
+int RTU::setLogger(Logger * const logger){
 
     mLogger = logger;
     RTUASSERT(mLogger == nullptr);
@@ -154,7 +237,7 @@ int STM32_VLDISCO::setLogger(Logger * const logger){
 /*---------------------------------------------------------------------------
  * Log event (e.g to std:out or a file)
  *--------------------------------------------------------------------------*/
-int STM32_VLDISCO::log(uint8_t const logLevel,std::string const & text){
+int RTU::log(uint8_t const logLevel,std::string const & text){
 
 
     if (mLogger == nullptr) return RTU_ERROR_NULLPTR;
@@ -165,9 +248,13 @@ int STM32_VLDISCO::log(uint8_t const logLevel,std::string const & text){
             mLogger->Error(text);
             break;
 
-         case RTU_NOTE:
-             mLogger->Note(text);
+         case RTU_VERBOSE:
+             mLogger->Verbose(text);
              break;
+
+        case RTU_MESSAGE:
+            mLogger->Message(text);
+            break;
 
          default:
              break;
@@ -184,7 +271,7 @@ int STM32_VLDISCO::log(uint8_t const logLevel,std::string const & text){
  * return slave response back. This is the base function for a communication
  * between Raspberry Pi and RTU.
  *--------------------------------------------------------------------------*/
-int STM32_VLDISCO::transaction(uint8_t * txData, unsigned int txLen,uint8_t * rxData,unsigned int * rxLen){
+int RTU::transaction(uint8_t * txData, unsigned int txLen,uint8_t * rxData,unsigned int * rxLen){
 
 
     // set slave select low
@@ -253,7 +340,7 @@ int STM32_VLDISCO::transaction(uint8_t * txData, unsigned int txLen,uint8_t * rx
     // reset slave select
     digitalWrite(SPI_SLAVE_CS_PIN,1);
 
-    log(RTU_NOTE,"SPI transaction OK!");
+    log(RTU_VERBOSE,"SPI transaction OK!");
 
     *rxLen = len;
 
@@ -266,7 +353,7 @@ int STM32_VLDISCO::transaction(uint8_t * txData, unsigned int txLen,uint8_t * rx
  * return slave response back. This is the base function for a communication
  * between Raspberry Pi and RTU.
  *--------------------------------------------------------------------------*/
-int STM32_VLDISCO::transaction(ModbusFrame_t & send, ModbusFrame_t * receive){
+int RTU::transaction(ModbusFrame_t & send, ModbusFrame_t * receive){
 
       uint8_t const cNumBytes = 255;
       uint8_t dataSend[cNumBytes] = {0};
@@ -317,7 +404,7 @@ int STM32_VLDISCO::transaction(ModbusFrame_t & send, ModbusFrame_t * receive){
  * internal registers can be marked as read only. Therfore this register can not
  * be written and this function won't return RTU_OK
  *--------------------------------------------------------------------------*/
-int STM32_VLDISCO::writeSingleRegister(uint8_t const reg, int16_t const value){
+int RTU::writeSingleRegister(uint8_t const reg, int16_t const value){
 
      uint8_t const cNumBytes = 4;
      uint8_t data[cNumBytes] = {0x0};
@@ -337,7 +424,7 @@ int STM32_VLDISCO::writeSingleRegister(uint8_t const reg, int16_t const value){
     string text = "Write Single Register " + to_string(reg);
 
     if (error == RTU_OK){
-        log(RTU_NOTE,text + " OK!");
+        log(RTU_VERBOSE,text + " OK!");
     }
     else {
         log(RTU_ERROR,text + + " NOK!");
@@ -352,7 +439,7 @@ int STM32_VLDISCO::writeSingleRegister(uint8_t const reg, int16_t const value){
 /*---------------------------------------------------------------------------
  * Read a single register of the RTU's internal registers.
  *--------------------------------------------------------------------------*/
-int STM32_VLDISCO::readSingleRegister(uint8_t const reg,int16_t * value){
+int RTU::readSingleRegister(uint8_t const reg,int16_t * value){
 
      uint8_t const cNumBytes = 4;
      uint8_t data[cNumBytes] = {0x0};
@@ -378,7 +465,7 @@ int STM32_VLDISCO::readSingleRegister(uint8_t const reg,int16_t * value){
          // update internal holding reg
          mHoldingRegisters->setValue(reg,*value);
 
-         log(RTU_NOTE,text + " OK!");
+         log(RTU_VERBOSE,text + " OK!");
 
      }
      else  log(RTU_ERROR,text + " NOK!");
@@ -390,7 +477,7 @@ int STM32_VLDISCO::readSingleRegister(uint8_t const reg,int16_t * value){
 /*---------------------------------------------------------------------------
  * Read multiple registers of the RTU' internal registers.
  *--------------------------------------------------------------------------*/
- int STM32_VLDISCO::readMultiRegister(uint8_t const reg,uint8_t const num, ModbusHoldingRegister * holdings){
+ int RTU::readMultiRegister(uint8_t const reg,uint8_t const num, ModbusHoldingRegister * holdings){
 
      uint8_t const cNumBytes = 4;
      uint8_t data[cNumBytes] = {0x0};
@@ -406,7 +493,10 @@ int STM32_VLDISCO::readSingleRegister(uint8_t const reg,int16_t * value){
 
      int error = transaction(sendFrame,&responseFrame);
 
-     string text = "Reading Multi Register " + num;
+     string text = "Reading Multi Register from ";
+     text.append(to_string(reg));
+     text.append(" to ");
+     text.append(to_string(reg+num-1));
 
      if (error == RTU_OK){
 
@@ -414,7 +504,7 @@ int STM32_VLDISCO::readSingleRegister(uint8_t const reg,int16_t * value){
              holdings->setValue(reg+i,(int16_t)(responseFrame.data[2*i+1]<< 8) | responseFrame.data[2*i+2]);
          }
 
-         log(RTU_NOTE,text + " OK!");
+         log(RTU_VERBOSE,text + " OK!");
      }
      else log(RTU_ERROR,text + " NOK!");
 
@@ -425,7 +515,7 @@ int STM32_VLDISCO::readSingleRegister(uint8_t const reg,int16_t * value){
   * Dump all registers, which have been read the last time. The registers can
   * be updated before they are printed.
   *--------------------------------------------------------------------------*/
- int STM32_VLDISCO::dumpRegisters(bool const updateBefore){
+ int RTU::dumpRegisters(bool const updateBefore){
 
      if (mHoldingRegisters == 0) return -1;
 
@@ -445,7 +535,7 @@ int STM32_VLDISCO::readSingleRegister(uint8_t const reg,int16_t * value){
   * Update all registers of the RTU and save them to the internal registers
   * of this class.
   *--------------------------------------------------------------------------*/
-int STM32_VLDISCO::updateRegisters(){
+int RTU::updateRegisters(){
 
     if (mHoldingRegisters == nullptr) return -1;
 
@@ -456,7 +546,7 @@ int STM32_VLDISCO::updateRegisters(){
 /*---------------------------------------------------------------------------
  * Reset all registers of the RTU.
  *--------------------------------------------------------------------------*/
-int STM32_VLDISCO::resetRegisters(){
+int RTU::resetRegisters(){
 
     int error = 0;
     for (int i = 0; i<RTU_NUM_HOLDING_REGISTER;i++){
@@ -478,7 +568,7 @@ int STM32_VLDISCO::resetRegisters(){
 /*---------------------------------------------------------------------------
  * Return a register, which was read the last time.
  *--------------------------------------------------------------------------*/
-int16_t STM32_VLDISCO::getRegister(uint8_t const reg) const{
+int16_t RTU::getRegister(uint8_t const reg) const{
 
     if (reg > RTU_NUM_HOLDING_REGISTER) return RTU_OK;
 
@@ -497,7 +587,7 @@ int16_t STM32_VLDISCO::getRegister(uint8_t const reg) const{
  * be used to set a single bit in the register and avoid overwritig existing
  * value.
  *--------------------------------------------------------------------------*/
-int STM32_VLDISCO::setBit(uint8_t const reg, uint16_t const bitMask){
+int RTU::setBit(uint8_t const reg, uint16_t const bitMask){
 
     int16_t value = 0;
 
@@ -518,7 +608,7 @@ int STM32_VLDISCO::setBit(uint8_t const reg, uint16_t const bitMask){
  * Clear a bit mask in the RTU's internal register. This function can be used
  * to reset a single bit in the register and avoid overwriting an existing value.
  *--------------------------------------------------------------------------*/
-int STM32_VLDISCO::clearBit(uint8_t const reg, uint16_t const bitMask){
+int RTU::clearBit(uint8_t const reg, uint16_t const bitMask){
     int16_t value = 0;
 
     // read register
@@ -539,7 +629,7 @@ int STM32_VLDISCO::clearBit(uint8_t const reg, uint16_t const bitMask){
  * Compare a register with a specified value. This function returns RTU_OK
  * when both values match.
  *--------------------------------------------------------------------------*/
-int STM32_VLDISCO::compareRegisterValue(uint8_t const reg, int16_t const value,bool const updateBefore){
+int RTU::compareRegisterValue(uint8_t const reg, int16_t const value,bool const updateBefore){
 
     int16_t tmp = 0;
 
@@ -561,7 +651,7 @@ int STM32_VLDISCO::compareRegisterValue(uint8_t const reg, int16_t const value,b
  * Compare a register with a specified bit mask. This function returns RTU_OK
  * when both values match.
  *--------------------------------------------------------------------------*/
-int STM32_VLDISCO::compareRegisterMask(uint8_t const reg, int16_t const value,bool const updateBefore){
+int RTU::compareRegisterMask(uint8_t const reg, int16_t const value,bool const updateBefore){
 
     int16_t tmp = 0;
 
@@ -582,7 +672,7 @@ int STM32_VLDISCO::compareRegisterMask(uint8_t const reg, int16_t const value,bo
  * Compare a register with a specified bit value. This function returns RTU_OK
  * a specific bit 1 or zero.
  *--------------------------------------------------------------------------*/
-int STM32_VLDISCO::compareRegisterBit(uint8_t const reg, uint16_t const bit,bool const value,bool const updateBefore){
+int RTU::compareRegisterBit(uint8_t const reg, uint16_t const bit,bool const value,bool const updateBefore){
 
     int16_t tmp = 0;
 
@@ -608,7 +698,7 @@ int STM32_VLDISCO::compareRegisterBit(uint8_t const reg, uint16_t const bit,bool
  * Check if a specified register bit is set. In case of a match RTU_OK
  * is returned.
  *--------------------------------------------------------------------------*/
-int STM32_VLDISCO::compareSet(uint8_t const reg, uint16_t const bit){
+int RTU::compareSet(uint8_t const reg, uint16_t const bit){
         return compareRegisterBit(reg,bit,1,true);
 }
 
@@ -617,7 +707,7 @@ int STM32_VLDISCO::compareSet(uint8_t const reg, uint16_t const bit){
  * Check if a specified register bit is zero. In case of a match RTU_OK
  * is returned.
  *--------------------------------------------------------------------------*/
-int STM32_VLDISCO::compareZero(uint8_t const reg, uint16_t const bit){
+int RTU::compareZero(uint8_t const reg, uint16_t const bit){
     return compareRegisterBit(reg,bit,0,true);
 }
 
@@ -627,7 +717,7 @@ int STM32_VLDISCO::compareZero(uint8_t const reg, uint16_t const bit){
  * Start PWM signal on a specified channel with a specified period and a
  * specified duty cycle.
  *--------------------------------------------------------------------------*/
- int STM32_VLDISCO::startPWM(uint8_t const channel, uint16_t const period, uint8_t const duty){
+ int RTU::startPWM(uint8_t const channel, uint16_t const period, uint8_t const duty){
 
     int error = writeSingleRegister(RTU_PWM_CR,0);
     error = clearBit(RTU_SYS_EN,channel);
@@ -656,7 +746,7 @@ int STM32_VLDISCO::compareZero(uint8_t const reg, uint16_t const bit){
   * Set PWM Count. This is the total number of PWM pulsed, which are generated
   * by the RTU
   *--------------------------------------------------------------------------*/
- int STM32_VLDISCO::setPWMCount(uint16_t const count){
+ int RTU::setPWMCount(uint16_t const count){
 
     int error = writeSingleRegister(RTU_PWM_CNT,count);
     RTUASSERT(error);
@@ -668,7 +758,7 @@ int STM32_VLDISCO::compareZero(uint8_t const reg, uint16_t const bit){
  /*---------------------------------------------------------------------------
   * Stop PWM singnal of a specified channel
   *--------------------------------------------------------------------------*/
- int STM32_VLDISCO::stopPWM(uint8_t const channel){
+ int RTU::stopPWM(uint8_t const channel){
     return clearBit(RTU_SYS_EN,channel);
  }
 
@@ -676,7 +766,7 @@ int STM32_VLDISCO::compareZero(uint8_t const reg, uint16_t const bit){
  /*---------------------------------------------------------------------------
   * Return if a PWM channel is off
   *--------------------------------------------------------------------------*/
- bool STM32_VLDISCO::isPWMOff(uint8_t const channel){
+ bool RTU::isPWMOff(uint8_t const channel){
 
      int enabled = compareSet(RTU_SYS_EN,channel);
      int status = compareSet(RTU_PWM_SR,channel);
@@ -686,7 +776,7 @@ int STM32_VLDISCO::compareZero(uint8_t const reg, uint16_t const bit){
      return false;
  }
 
- int STM32_VLDISCO::setCaptureCount(uint8_t const channel, uint16_t const value){
+ int RTU::setCaptureCount(uint8_t const channel, uint16_t const value){
 
     int error = -1;
 
@@ -717,7 +807,7 @@ int STM32_VLDISCO::compareZero(uint8_t const reg, uint16_t const bit){
     return RTU_OK;
  }
 
- int STM32_VLDISCO::setCaptureResolution(uint16_t const resolution){
+ int RTU::setCaptureResolution(uint16_t const resolution){
 
      int error = writeSingleRegister(RTU_CNT_RES,resolution);
      RTUASSERT(error);
@@ -725,7 +815,7 @@ int STM32_VLDISCO::compareZero(uint8_t const reg, uint16_t const bit){
      return RTU_OK;
  }
 
-int STM32_VLDISCO::startCapture(uint8_t const channel){
+int RTU::startCapture(uint8_t const channel){
 
     int error = setBit(RTU_SYS_EN,channel);
     RTUASSERT(error);
@@ -736,7 +826,7 @@ int STM32_VLDISCO::startCapture(uint8_t const channel){
     return RTU_OK;
 }
 
-int STM32_VLDISCO::stopCapture(uint8_t const channel){
+int RTU::stopCapture(uint8_t const channel){
 
     int error = clearBit(RTU_SYS_EN,channel);
     RTUASSERT(error);
@@ -744,14 +834,14 @@ int STM32_VLDISCO::stopCapture(uint8_t const channel){
     return RTU_OK;
 }
 
-int STM32_VLDISCO::setDACVoltage(uint16_t const voltage_mv){
+int RTU::setDACVoltage(uint16_t const voltage_mv){
     int error = writeSingleRegister(RTU_DAC_VOL,voltage_mv);
     RTUASSERT(error);
 
     return RTU_OK;
 }
 
-bool STM32_VLDISCO::isCaptureFinished(uint8_t const channel){
+bool RTU::isCaptureFinished(uint8_t const channel){
 
     int error = writeSingleRegister(RTU_CNT_SR,channel>>4);
     if (error != RTU_OK) return false;
@@ -762,7 +852,7 @@ bool STM32_VLDISCO::isCaptureFinished(uint8_t const channel){
     return true;
 }
 
-int STM32_VLDISCO::getFrequency(uint8_t const channel,uint16_t * value){
+int RTU::getFrequency(uint8_t const channel,uint16_t * value){
 
     if (value == nullptr) return RTU_ERROR_NULLPTR;
 
@@ -782,14 +872,14 @@ int STM32_VLDISCO::getFrequency(uint8_t const channel,uint16_t * value){
  /*---------------------------------------------------------------------------
   * Return Statistic
   *--------------------------------------------------------------------------*/
- RTUStatistic STM32_VLDISCO::getStatistic() const{
+ RTUStatistic RTU::getStatistic() const{
      return mStatistic;
  }
 
  /*---------------------------------------------------------------------------
   * Print Statistic
   *--------------------------------------------------------------------------*/
- int STM32_VLDISCO::printStatistic() const{
+ int RTU::printStatistic() const{
 
      SPIConfig_t spiConfig = mSPIInterface->getConfig();
 
@@ -811,7 +901,7 @@ int STM32_VLDISCO::getFrequency(uint8_t const channel,uint16_t * value){
  /*---------------------------------------------------------------------------
   * Move Terminal Cursor Up
   *--------------------------------------------------------------------------*/
- int STM32_VLDISCO::setTerminalCursorBack(uint8_t const num)const{
+ int RTU::setTerminalCursorBack(uint8_t const num)const{
 
      // set cursor to the beginning
      for (size_t i = 0; i<num; i++){
@@ -825,7 +915,7 @@ int STM32_VLDISCO::getFrequency(uint8_t const channel,uint16_t * value){
  /*---------------------------------------------------------------------------
   * Start stopwatch
   *--------------------------------------------------------------------------*/
- int STM32_VLDISCO::startTimer(){
+ int RTU::startTimer(){
 
      mStopwatchCounter = getTime();
 
@@ -835,7 +925,7 @@ int STM32_VLDISCO::getFrequency(uint8_t const channel,uint16_t * value){
  /*---------------------------------------------------------------------------
   * Start stopwatch
   *--------------------------------------------------------------------------*/
- double STM32_VLDISCO::stopTimer(){
+ double RTU::stopTimer(){
 
 
      if (mStopwatchCounter == 0){
@@ -853,7 +943,7 @@ int STM32_VLDISCO::getFrequency(uint8_t const channel,uint16_t * value){
  /*---------------------------------------------------------------------------
   * Get stopwatch time
   *--------------------------------------------------------------------------*/
- double STM32_VLDISCO::getTime(){
+ double RTU::getTime(){
 
      struct timespec ts;
      clock_gettime(CLOCK_MONOTONIC,&ts);
@@ -868,14 +958,14 @@ int STM32_VLDISCO::getFrequency(uint8_t const channel,uint16_t * value){
  /*---------------------------------------------------------------------------
   * Get elapsed time
   *--------------------------------------------------------------------------*/
- double STM32_VLDISCO::getElapsed(){
+ double RTU::getElapsed(){
 
      // calculate elapsed time
      uint64_t elapsed = (getTime() - mStopwatchCounter) / 1000000;
      return elapsed;
  }
 
- void STM32_VLDISCO::delayMilliseconds(uint16_t const milliseconds){
+ void RTU::delayMilliseconds(uint16_t const milliseconds){
 
      double start = getTime();
      double elapsed = 0;
@@ -886,7 +976,7 @@ int STM32_VLDISCO::getFrequency(uint8_t const channel,uint16_t * value){
  }
 
 
-int STM32_VLDISCO::assertHandler(int errorCode,string const & file, int line){
+int RTU::assertHandler(int errorCode,string const & file, int line){
 
     string text = "ASSERT FAILED IN";
     text.append(file);

@@ -21,21 +21,19 @@ using namespace std;
 Logger::Logger()
 {
     mLastError = "";
-    mLastWarning = "";
-    mLastNote = "";
+    mLastMessage = "";
+    mLastVerbose = "";
 }
 
 
 /* --------------------------------------
  * Log a string
  * --------------------------------------*/
-void Logger::Log(std:: string severityLevel,std::string const & text){
+void Logger::Log(std:: string logLevel,std::string const & text){
 
    stringstream stream;
+   stream << left << "[" << logLevel[0] << "] ";
    stream << setw(20) << left << getTimestamp();
-   stream << ": ";
-   stream << setw(8) << mLogName << " ";
-   stream << left << setw(5) <<  " -->" << left << setw(7) << severityLevel;
    stream << ": ";
    stream << text <<"!";
 
@@ -60,9 +58,9 @@ std::string Logger::getTimestamp(){
 /* --------------------------------------
  * setting Logging options
  * --------------------------------------*/
-void Logger::setLoggingOption(bool note,bool warning, bool error){
-    mNoteEnabled = note;
-    mWarningEnabled = warning;
+void Logger::setLoggingOption(bool message,bool verbose, bool error){
+    mMessageEnabled = message;
+    mVerboseEnabled = verbose;
     mErrorEnabled = error;
 }
 
@@ -75,12 +73,12 @@ void Logger::setLogName(std::string const & name){
 }
 
 /* --------------------------------------
- * Print as note
+ * Print as message
  * --------------------------------------*/
-void Logger::Note(std::string const & text){
-     if (!mNoteEnabled) return;
-     Log("Note",text);
-     mLastNote = text;
+void Logger::Message(std::string const & text){
+     if (!mMessageEnabled) return;
+     Log("Message",text);
+     mLastMessage = text;
 }
 
 /* --------------------------------------
@@ -93,19 +91,19 @@ void Logger::Error(std::string const & text){
 }
 
 /* --------------------------------------
- * Print as warning
+ * Print as verbose
  * --------------------------------------*/
-void Logger::Warning(std::string const & text){
-     if (!mWarningEnabled) return;
-     Log("Warning",text);
-     mLastWarning = text;
+void Logger::Verbose(std::string const & text){
+     if (!mVerboseEnabled) return;
+     Log("Verbose",text);
+     mLastVerbose = text;
 }
 
 /* --------------------------------------
- * Get last note
+ * Get last message
  * --------------------------------------*/
-std::string Logger::getLastNote() const{
-    return mLastNote;
+std::string Logger::getLastMessage() const{
+    return mLastMessage;
 }
 
 /* --------------------------------------
@@ -116,8 +114,8 @@ std::string Logger::getLastError() const{
 }
 
 /* --------------------------------------
- * Get last warning
+ * Get last verbose
  * --------------------------------------*/
-std::string Logger::getLastWarning() const{
-    return mLastWarning;
+std::string Logger::getLastVerbose() const{
+    return mLastVerbose;
 }

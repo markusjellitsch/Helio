@@ -8,7 +8,7 @@
 #ifndef RS485RPI_H
 #define RS485RPI_H
 
-#include <interface.h>
+#include <Interface/interface.h>
 #include <string>
 #include <termios.h>
 

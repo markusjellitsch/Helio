@@ -8,10 +8,7 @@
 #include <iostream>
 #include <string>
 #include <string.h>
-#include <Heti/heti.h>
-#include <TestUnit/test_runner.h>
-#include <TestUnit/test_rgb.h>
-#include <Logger/stdlogger.h>
+#include <helio.h>
 
 using namespace std;
 
@@ -27,21 +24,21 @@ int main(int argc, char *argv[])
     TestRunner runner;
     StdLogger logger;
 
-    bool logging = false;
+    bool verbose = false;
 
     // enable logging level0
     if (argc ==2){
         if (strcmp(argv[1],"-v0")==0){
-            logging = true;
+            verbose = true;
         }
     // enable logging level1 (+more specific)
     else if (strcmp(argv[1],"-v1")==0){
-            logging = true;
-            HETI::GetInstance()->setLogger(&logger);
+            verbose = true;
+            HETI::getInstance()->setLogger(&logger);
         }
     }
 
-    logger.setLoggingOption(logging,logging,logging);
+    logger.setLoggingOption(true,verbose,true);
     logger.setLogName("Test Runner Logger");
 
     // set the logger for the runner
@@ -54,10 +51,6 @@ int main(int argc, char *argv[])
 
     success = runner.runAllTests();
 
-    if (success == TESTRUNNER_OK){
-       cout <<  TESTNAME << ": OK!" << endl;
-    }
-    else cout << TESTNAME << ": NOK!" << endl;
-
+    cout << "Finished!" << endl;
     return 0;
 }

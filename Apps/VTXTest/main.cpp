@@ -9,10 +9,12 @@
 #include <string>
 #include <string.h>
 #include <helio.h>
+#include <cxxopts.hpp>
 
 using namespace std;
+using namespace cxxopts;
 
-#define TESTNAME "RGB Test"
+#define TESTNAME "VTX Test"
 
 /*--------------------------------------------------
  * Modbus RTU (RS485) testing
@@ -20,41 +22,46 @@ using namespace std;
 int main(int argc, char *argv[])
 {
 
-    TestRGB rgbUnit;
+  Options options("VTX Test","Testing Vortex of WebEx")
+
+  options.add_options()("v,verbose","Enable verbose mode");
+  auto result = options.parse(argc,argv);
+  if (result.count("verbose")>0){
+
+      cout << result["verbose"].as<string>() << endl;
+  }
+
+    TestVTX vtxUnit;
     TestRunner runner;
     StdLogger logger;
 
-    bool logging = false;
+    bool verbose = false;
 
     // enable logging level0
     if (argc ==2){
         if (strcmp(argv[1],"-v0")==0){
-            logging = true;
+            verbose = true;
         }
     // enable logging level1 (+more specific)
     else if (strcmp(argv[1],"-v1")==0){
-            logging = true;
-            HETI::GetInstance()->setLogger(&logger);
+            verbose = true;
+            HETI::getInstance()->setLogger(&logger);
         }
     }
 
-    logger.setLoggingOption(logging,logging,logging);
+    logger.setLoggingOption(true,verbose,true);
     logger.setLogName("Test Runner Logger");
 
     // set the logger for the runner
     runner.setLogger(&logger);
 
     // add the test
-    runner.addTest(&rgbUnit,TESTNAME);
+    runner.addTest(&vtxUnit,TESTNAME);
 
     int success = 0;
 
     success = runner.runAllTests();
 
-    if (success == TESTRUNNER_OK){
-       cout <<  TESTNAME << ": OK!" << endl;
-    }
-    else cout << TESTNAME << ": NOK!" << endl;
-
+    cout << "Finished!" << endl;
     return 0;
 }

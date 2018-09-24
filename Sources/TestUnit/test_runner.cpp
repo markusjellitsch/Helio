@@ -51,6 +51,8 @@ int TestRunner::runTest(unsigned int const testNr){
 
     if (mTestList[testNr] != nullptr) {
 
+        string testName = mTestList[testNr]->getTestName();
+        log(TEST_SEVERITY_MESSAGE,"Run Test "+testName);
         // setup test
         success = mTestList[testNr]->setup();
         TESTRUNASSERT(success);
@@ -63,7 +65,7 @@ int TestRunner::runTest(unsigned int const testNr){
         success = mTestList[testNr]->tearDown();
         TESTRUNASSERT(success);
 
-        log(TEST_SEVERITY_NOTE,"Test completed and succesful!");
+        log(TEST_SEVERITY_MESSAGE,"Test OK");
         return TEST_OK;
     }
 
@@ -112,8 +114,12 @@ int TestRunner::log(uint8_t const logLevel, std::string const & text){
         mLogger->Error(stream.str());
         break;
 
-    case TEST_SEVERITY_NOTE:
-        mLogger->Note(stream.str());
+    case TEST_SEVERITY_MESSAGE:
+        mLogger->Message(stream.str());
+        break;
+
+    case TEST_SEVERITY_VERBOSE:
+        mLogger->Verbose(stream.str());
         break;
     }
 

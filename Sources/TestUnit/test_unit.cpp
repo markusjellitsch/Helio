@@ -38,14 +38,14 @@ TestUnit::~TestUnit(){
 // ------------------------------------
 int TestUnit::setup(){
 
-    log(TEST_SEVERITY_NOTE,"Setup Test!");
+    log(TEST_SEVERITY_VERBOSE,"Setup Test!");
 
     // call setup hook
     int success = doSetup();
 
     // log success
     if (success == TEST_OK){
-        log(TEST_SEVERITY_NOTE, "Setup successful!");
+        log(TEST_SEVERITY_VERBOSE, "Setup successful!");
     }
     else log(TEST_SEVERITY_ERROR, "Setup error occured!");
 
@@ -57,14 +57,14 @@ int TestUnit::setup(){
 // -----------------------------------
 int TestUnit::tearDown(){
 
-    log(TEST_SEVERITY_NOTE,"Tear down Test!");
+    log(TEST_SEVERITY_VERBOSE,"Tear down Test!");
 
     // call tear down hook
     int success = doTearDown();
 
     // log success
     if (success == TEST_OK){
-        log(TEST_SEVERITY_NOTE, "Tear down successful!");
+        log(TEST_SEVERITY_VERBOSE, "Tear down successful!");
     }
     else log(TEST_SEVERITY_ERROR, "Tear down error occured!");
 
@@ -76,14 +76,14 @@ int TestUnit::tearDown(){
 // -----------------------------------
 int TestUnit::runTest(){
 
-    log(TEST_SEVERITY_NOTE,"Run Test!");
+    log(TEST_SEVERITY_VERBOSE,"Run Test!");
 
     // call run test hook
     int success = doRunTest();
 
     // log success
     if (success == TEST_OK){
-        log(TEST_SEVERITY_NOTE, "Test run successful!");
+        log(TEST_SEVERITY_VERBOSE, "Test run successful!");
     }
     else log(TEST_SEVERITY_ERROR, "Test run error occured!");
 
@@ -116,8 +116,12 @@ int TestUnit::log(uint8_t const logLevel, std::string const & text){
         mLogger->Error(stream.str());
         break;
 
-    case TEST_SEVERITY_NOTE:
-        mLogger->Note(stream.str());
+    case TEST_SEVERITY_MESSAGE:
+        mLogger->Message(stream.str());
+        break;
+
+    case TEST_SEVERITY_VERBOSE:
+        mLogger->Verbose(stream.str());
         break;
     }
 
@@ -131,6 +135,10 @@ int TestUnit::setTestName(std::string const & name){
         mTestName = name;
 
         return TEST_OK;
+}
+
+std::string TestUnit::getTestName(){
+    return mTestName;
 }
 
 // -----------------------------------

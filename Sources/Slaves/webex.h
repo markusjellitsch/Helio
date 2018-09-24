@@ -23,9 +23,8 @@ class WebEx
 {
 public:
 
-    WebEx();
-    ~WebEx()=default;
-
+    static WebEx * getInstance();
+    static int releaseInstance();
     int connect();
 
     int setRGBColor(uint8_t const color);
@@ -43,11 +42,17 @@ public:
     int readDip(uint16_t * value);
 
     int dumpRegisters();
+
     int readRegister(uint8_t reg, int16_t * value);
+    int checkRegister(uint8_t reg,int16_t value);
 
 private:
 
-    HETI * mHeti;
-    };
+    WebEx();
+    ~WebEx();
+
+    HETI * mHeti=nullptr;
+    static WebEx * mInstance;
+  };
 
 #endif // Webex

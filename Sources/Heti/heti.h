@@ -12,7 +12,7 @@
 #include "Modbus/holdingregister.h"
 #include "Logger/logger.h"
 #include <ctime>
-#include "rs485_rpi.h"
+#include "Interface/rs485_rpi.h"
 
 
 #define HETI_OK                             0
@@ -29,9 +29,9 @@
 #define HETI_ERROR_COMPARISON_FAILED        -7
 
 
-#define HETI_ERROR                          1
-#define HETI_NOTE                           2
-
+#define HETI_MESSAGE                        1
+#define HETI_VERBOSE                        2
+#define HETI_ERROR                          3
 
 
 
@@ -59,8 +59,9 @@ class HETI
 public:
 
     /* make unique */
-    static HETI * GetInstance();
-    ~HETI();
+    static HETI * getInstance();
+    static int  releaseInstance();
+
 
     /* connect to rs485 serial port */
     int open(RS485Config_t * rs485Config = (RS485Config_t *)&cHetiRS485Config);
@@ -123,6 +124,7 @@ private:
     /* delete constructor, copy,assignment */
     HETI();
     HETI(HETI const &) = delete;
+    ~HETI();
     void operator=(HETI const &) = delete;
 
     /* log events */

@@ -19,8 +19,40 @@
 
 using namespace std;
 
+WebEx * WebEx::mInstance=nullptr;
+
+
+WebEx* WebEx::getInstance(){
+
+    // create if not existing
+    if (mInstance == nullptr){
+        mInstance = new WebEx;
+        assert(mInstance != nullptr);
+    }
+
+    return mInstance;
+}
+
+int WebEx::releaseInstance(){
+
+    if (mInstance == nullptr){
+        return -1;
+    }
+
+    delete mInstance;
+    mInstance = nullptr;
+
+    return WEBEX_OK;
+}
+
+WebEx::~WebEx(){
+    mHeti->releaseInstance();
+    mHeti = nullptr;
+}
+
+
 WebEx::WebEx(){
-     mHeti = HETI::GetInstance();
+     mHeti = HETI::getInstance();
      mHeti->getHoldingRegisterInstance()->setName(0,"RGB MODE");
      mHeti->getHoldingRegisterInstance()->setName(1,"RGB COLOR");
      mHeti->getHoldingRegisterInstance()->setName(2,"RGB LOCK");
@@ -186,6 +218,12 @@ int WebEx::readRegister(uint8_t reg, int16_t * value){
     }
 
     return WEBEX_OK;
+}
+
+int WebEx::checkRegister(uint8_t reg,int16_t value){
+
+    int success = mHeti->compareRegisterValue(reg,value,true);
+    return success;
 }
 
 int WebEx::setStepper(uint8_t stepNr,uint8_t const on){

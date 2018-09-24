@@ -18,7 +18,8 @@
 
 #define  TESTRUNASSERT(x)                                                       \
 {                                                                               \
-    if (x != TESTRUNNER_OK){                                                                \
+    if (x != TESTRUNNER_OK){                                                    \
+        log(TEST_SEVERITY_MESSAGE,"Test FAIL");                                \
         return x;                                                               \
     }                                                                           \
 }

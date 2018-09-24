@@ -21,20 +21,21 @@
 #define TEST_ERROR_NULLPTR          -4
 
 #define TEST_SEVERITY_ERROR          0
-#define TEST_SEVERITY_NOTE           1
+#define TEST_SEVERITY_MESSAGE        1
+#define TEST_SEVERITY_VERBOSE        2
 
 #define TEST_DEFAULT_TESTNAME        ("Unknown Test")
 
 // asserting test
-#define  TESTASSERT(x,y)                                                        \
+#define  TESTASSERT(x,y)                                                         \
 {                                                                               \
                                                                                  \
-    log(TEST_SEVERITY_NOTE,y);                                             \
+    log(TEST_SEVERITY_VERBOSE,y);                                                   \
     if (x != 0){                                                                \
         assertHandler(x,__FILE__,__LINE__);                                     \
         return x;                                                               \
     }                                                                           \
-    log(TEST_SEVERITY_NOTE,"Check OK");                                         \
+    log(TEST_SEVERITY_VERBOSE,"Check OK");                                         \
 }
 
 // compare test
@@ -67,6 +68,7 @@ public:
 
     // set test names
     int setTestName(std::string const & name);
+    std::string getTestName();
 
 
 protected:

@@ -16,7 +16,6 @@ SOURCES += \
     ../../Sources/Interface/spirpi.cpp \
     ../../Sources/Interface/rs485_rpi.cpp \
     ../../Sources/Interface/i2crpi.cpp \
-    ../../Sources/Slaves/stm32_vldisco.cpp \
     ../../Sources/Logger/logger.cpp \
     ../../Sources/Logger/stdlogger.cpp \
     ../../Sources/Heti/heti.cpp \
@@ -26,7 +25,11 @@ SOURCES += \
     ../../Sources/TestUnit/test_unit.cpp \
     ../../Sources/TestUnit/test_runner.cpp \
     ../../Sources/TestUnit/test_rgb.cpp \
-    ../../Sources/TestUnit/test_fu.cpp
+    ../../Sources/TestUnit/test_fu.cpp \
+    ../../Sources/Slaves/webex.cpp \
+    ../../Sources/Slaves/rtu.cpp \
+    ../../Sources/Console/console.cpp \
+    ../../Sources/TestUnit/test_pwm.cpp
 
 HEADERS += \
     ../../Sources/Interface/uart_rpi.h \
@@ -34,7 +37,6 @@ HEADERS += \
     ../../Sources/Interface/rs485_rpi.h \
     ../../Sources/Interface/interface.h \
     ../../Sources/Interface/i2crpi.h \
-    ../../Sources/Slaves/stm32_vldisco.h \
     ../../Sources/Logger/stdlogger.h \
     ../../Sources/Logger/logger.h \
     ../../Sources/Heti/heti.h \
@@ -45,7 +47,11 @@ HEADERS += \
     ../../Sources/TestUnit/test_unit.h \
     ../../Sources/TestUnit/test_runner.h \
     ../../Sources/TestUnit/test_rgb.h \
-    ../../Sources/TestUnit/test_fu.h
+    ../../Sources/TestUnit/test_fu.h \
+    ../../Sources/Slaves/webex.h \
+    ../../Sources/Slaves/rtu.h \
+    ../../Sources/Console/console.h \
+    ../../Sources/TestUnit/test_pwm.h
 unix {
     target.path = /usr/lib
     INSTALLS += target

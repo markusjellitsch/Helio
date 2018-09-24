@@ -8,7 +8,7 @@
 #ifndef SPIRPI_H
 #define SPIRPI_H
 
-#include <interface.h>
+#include <Interface/interface.h>
 #include <string>
 
 #define SPI_RPI_CS0_FILENAME ((char *)"/dev/spidev0.0")

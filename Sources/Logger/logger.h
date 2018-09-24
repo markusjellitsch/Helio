@@ -14,19 +14,20 @@ class Logger
 {
 public:
     Logger();
+    virtual ~Logger()=default;
 
     // different logs
-    void Note(std::string const & text);
+    void Message(std::string const & text);
     void Error(std::string const & text);
-    void Warning(std::string const & text);
+    void Verbose(std::string const & text);
 
-    std::string getLastNote() const;
+    std::string getLastMessage() const;
     std::string getLastError() const;
-    std::string getLastWarning() const;
+    std::string getLastVerbose() const;
 
     void setLogName(std::string const & name);
 
-    void setLoggingOption(bool note=true,bool warning=true, bool error = true);
+    void setLoggingOption(bool message=true,bool verbose=true, bool error = true);
 
 protected:
 
@@ -34,15 +35,15 @@ protected:
       virtual void DoLog(std::string const & text)=0;
 
 private:
-    void Log(std:: string severityLevel,std::string const & text);
+    void Log(std:: string logLevel,std::string const & text);
 
-    std::string mLastNote;
+    std::string mLastMessage;
+    std::string mLastVerbose;
     std::string mLastError;
-    std::string mLastWarning;
     std::string mLogName;
 
-    bool mNoteEnabled=true;
-    bool mWarningEnabled=true;
+    bool mMessageEnabled=true;
+    bool mVerboseEnabled=true;
     bool mErrorEnabled=true;
 };
 

@@ -2,8 +2,8 @@
 #define HELIO_H
 
 // core specific includes
-#include "Slaves/stm32_vldisco.h"
-#include "Heti/heti.h"
+#include "Slaves/rtu.h"
+#include "Slaves/webex.h"
 
 // non-core specific
 #include "Logger/stdlogger.h"

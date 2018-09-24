@@ -23,7 +23,7 @@ HETI * HETI::mInstance = nullptr;
 /*---------------------------------------------------------------------------
  *  Return the singelton
  *--------------------------------------------------------------------------*/
-HETI * HETI::GetInstance(){
+HETI * HETI::getInstance(){
 
     // create if not existing
     if (mInstance == nullptr){
@@ -32,6 +32,18 @@ HETI * HETI::GetInstance(){
     }
 
     return mInstance;
+}
+
+int HETI::releaseInstance(){
+
+    if (mInstance == nullptr){
+        return HETI_ERROR_NULLPTR;
+    }
+
+    delete mInstance;
+    mInstance = nullptr;
+
+    return HETI_OK;
 }
 
 
@@ -72,10 +84,10 @@ int HETI::open(RS485Config_t * rs485Config){
     // open rs485
     int success = mRS485Interface->openInterface((void *)rs485Config);
     if (success){
-        log(HETI_NOTE,"HETI initialization successful!");
+        log(HETI_VERBOSE,"HETI initialization successful!");
     }
     else{
-        log(HETI_NOTE,"HETI initialization successful!");
+        log(HETI_VERBOSE,"HETI initialization successful!");
     }
 
     mStatistic.commandsSent = 0;
@@ -117,9 +129,13 @@ int HETI::log(uint8_t const logLevel,std::string const & text){
             mLogger->Error(text);
             break;
 
-         case HETI_NOTE:
-             mLogger->Note(text);
+         case HETI_MESSAGE:
+             mLogger->Message(text);
              break;
+
+        case HETI_VERBOSE:
+           mLogger->Verbose(text);
+        break;
 
          default:
              break;
@@ -160,7 +176,7 @@ int HETI::transaction(uint8_t * txData, unsigned int txLen,uint8_t * rxData,unsi
         return HETI_ERROR_RS485_READ_FAILED;
     }
 
-    log(HETI_NOTE,"RS485 transaction OK!");
+    log(HETI_VERBOSE,"RS485 transaction OK!");
 
     return HETI_OK;
 }
@@ -243,7 +259,7 @@ int HETI::writeSingleRegister(uint8_t const reg, int16_t const value){
     text.append(to_string(reg));
 
     if (error == HETI_OK){
-        log(HETI_NOTE,text + " OK!");
+        log(HETI_VERBOSE,text + " OK!");
     }
     else {
         log(HETI_ERROR,text + " NOK!");
@@ -283,7 +299,7 @@ int HETI::readSingleRegister(uint8_t const reg,int16_t * value){
          // update internal holding reg
          mHoldingRegisters->setValue(reg,*value);
 
-         log(HETI_NOTE,text + " OK!");
+         log(HETI_VERBOSE,text + " OK!");
 
      }
      else  log(HETI_ERROR,text + " NOK!");
@@ -319,7 +335,7 @@ int HETI::readSingleRegister(uint8_t const reg,int16_t * value){
              holdings->setValue(reg+i,(int16_t)(responseFrame.data[2*i+1]<< 8) | responseFrame.data[2*i+2]);
          }
 
-         log(HETI_NOTE,text + " OK!");
+         log(HETI_VERBOSE,text + " OK!");
      }
      else log(HETI_ERROR,text + " NOK!");
 
