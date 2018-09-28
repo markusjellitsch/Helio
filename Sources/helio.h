@@ -11,6 +11,9 @@
 #include "TestUnit/test_fu.h"
 #include "TestUnit/test_rgb.h"
 #include "TestUnit/test_vtx.h"
+#include "TestUnit/test_pwm.h"
+
+#include "Console/console.h"
 
 
 #endif // HELIO_H

@@ -22,6 +22,9 @@ using namespace std;
 WebEx * WebEx::mInstance=nullptr;
 
 
+/*---------------------------------------------------------------------------
+ *  Get the WebEx Instance. Create if necessary
+ *--------------------------------------------------------------------------*/
 WebEx* WebEx::getInstance(){
 
     // create if not existing
@@ -33,6 +36,9 @@ WebEx* WebEx::getInstance(){
     return mInstance;
 }
 
+/*---------------------------------------------------------------------------
+ *  Destroy the singelton
+ *--------------------------------------------------------------------------*/
 int WebEx::releaseInstance(){
 
     if (mInstance == nullptr){
@@ -45,14 +51,23 @@ int WebEx::releaseInstance(){
     return WEBEX_OK;
 }
 
+/*---------------------------------------------------------------------------
+ *  Destructor
+ *--------------------------------------------------------------------------*/
 WebEx::~WebEx(){
     mHeti->releaseInstance();
     mHeti = nullptr;
 }
 
-
+/*---------------------------------------------------------------------------
+ *  Constructor
+ *--------------------------------------------------------------------------*/
 WebEx::WebEx(){
+
+     // get heti instance for setting register name & description
      mHeti = HETI::getInstance();
+     if (mHeti == nullptr) return;
+
      mHeti->getHoldingRegisterInstance()->setName(0,"RGB MODE");
      mHeti->getHoldingRegisterInstance()->setName(1,"RGB COLOR");
      mHeti->getHoldingRegisterInstance()->setName(2,"RGB LOCK");
@@ -74,17 +89,22 @@ WebEx::WebEx(){
      mHeti->getHoldingRegisterInstance()->setName(22,"HW TYPE");
  }
 
+/*---------------------------------------------------------------------------
+ * Open helio test master interface (=heti). This is a RS485 UART interface
+ *--------------------------------------------------------------------------*/
 int WebEx::connect(){
 
     if (mHeti == nullptr) return -2;
 
     int success = 0;
 
+    // open HETI
     success = mHeti->open();
     if (success != HETI_OK){
         return -1;
     }
 
+    // read first register as Test
     int16_t value = 0;
     success = mHeti->readSingleRegister(0,&value);
     if (success != HETI_OK){
@@ -94,6 +114,9 @@ int WebEx::connect(){
     return WEBEX_OK;
 }
 
+/*---------------------------------------------------------------------------
+ * Set the WebEx RGB color
+ *--------------------------------------------------------------------------*/
 int WebEx::setRGBColor(const uint8_t color){
 
     if (mHeti == nullptr){
@@ -102,8 +125,9 @@ int WebEx::setRGBColor(const uint8_t color){
 
     uint8_t tmp = color;
 
-    if (tmp > 6) tmp = 6;
+    if (tmp > WEBEX_RGB_NUM_COLORS) tmp = WEBEX_RGB_WHITE;
 
+    // set Reg 1 with the rgb value
     int success = mHeti->writeSingleRegister(1,tmp);
     if (success != HETI_OK){
         return -2;
@@ -112,6 +136,9 @@ int WebEx::setRGBColor(const uint8_t color){
     return WEBEX_OK;
 }
 
+/*---------------------------------------------------------------------------
+ * Start PWM
+ *--------------------------------------------------------------------------*/
 int WebEx::startPWM(const uint8_t duty,uint16_t duration){
 
     if (mHeti == nullptr){
@@ -120,16 +147,19 @@ int WebEx::startPWM(const uint8_t duty,uint16_t duration){
 
     int success = 0;
 
+    // set duty cycle (reg 3)
     success = mHeti->writeSingleRegister(3,duty);
     if (success != HETI_OK){
         return -2;
     }
 
+    // set duration (reg 4)
     success = mHeti->writeSingleRegister(4,duration);
     if (success != HETI_OK){
         return -3;
     }
 
+    // start pwm (reg 5)
     success = mHeti->writeSingleRegister(5,1);
     if (success != HETI_OK){
         return -3;
@@ -137,48 +167,9 @@ int WebEx::startPWM(const uint8_t duty,uint16_t duration){
 
     return WEBEX_OK;
 }
-
-int WebEx::startCounter(uint8_t cntNr, uint16_t count){
-
-    if (mHeti == nullptr){
-        return -1;
-    }
-
-    int success = 0;
-
-    success = mHeti->writeSingleRegister(6,count);
-    if (success != HETI_OK){
-        return -2;
-    }
-
-    success = mHeti->writeSingleRegister(7,cntNr);
-    if (success != HETI_OK){
-        return -3;
-    }
-
-    return WEBEX_OK;
-}
-int WebEx::stopCounter(){
-
-    if (mHeti == nullptr){
-        return -1;
-    }
-
-    int success = 0;
-
-    success = mHeti->writeSingleRegister(6,0);
-    if (success != HETI_OK){
-        return -2;
-    }
-
-    success = mHeti->writeSingleRegister(7,0);
-    if (success != HETI_OK){
-        return -3;
-    }
-
-    return WEBEX_OK;
-}
-
+/*---------------------------------------------------------------------------
+ * Stop PWM
+ *--------------------------------------------------------------------------*/
 int WebEx::stopPWM(){
 
     if (mHeti == nullptr){
@@ -187,6 +178,7 @@ int WebEx::stopPWM(){
 
     int success = 0;
 
+    // stop PWM (reg 5)
     success = mHeti->writeSingleRegister(5,0);
     if (success != HETI_OK){
         return -3;
@@ -195,15 +187,75 @@ int WebEx::stopPWM(){
     return WEBEX_OK;
 }
 
+/*---------------------------------------------------------------------------
+ * Start VTX freq counter on a channel
+ *--------------------------------------------------------------------------*/
+int WebEx::startCounter(uint8_t cntNr, uint16_t count){
+
+    if (mHeti == nullptr){
+        return -1;
+    }
+
+    int success = 0;
+
+    // set counter value (reg 6)
+    success = mHeti->writeSingleRegister(6,count);
+    if (success != HETI_OK){
+        return -2;
+    }
+
+    // enable VTX count (reg 7)
+    success = mHeti->writeSingleRegister(7,cntNr);
+    if (success != HETI_OK){
+        return -3;
+    }
+
+    return WEBEX_OK;
+}
+
+/*---------------------------------------------------------------------------
+ * Stop  VTX frequency count
+ *--------------------------------------------------------------------------*/
+int WebEx::stopCounter(){
+
+    if (mHeti == nullptr){
+        return -1;
+    }
+
+    int success = 0;
+
+    // reset counter value (reg 6)
+    success = mHeti->writeSingleRegister(6,0);
+    if (success != HETI_OK){
+        return -2;
+    }
+
+    // stop counter value (reg 7)
+    success = mHeti->writeSingleRegister(7,0);
+    if (success != HETI_OK){
+        return -3;
+    }
+
+    return WEBEX_OK;
+}
+
+
+/*---------------------------------------------------------------------------
+ * Dump all Registers from WebEx
+ *--------------------------------------------------------------------------*/
 int WebEx::dumpRegisters(){
 
     if (mHeti == nullptr){
         return -1;
     }
 
+    // update and dump
     return mHeti->dumpRegisters(1);
 }
 
+/*---------------------------------------------------------------------------
+ * Read a single Register from PWM
+ *--------------------------------------------------------------------------*/
 int WebEx::readRegister(uint8_t reg, int16_t * value){
 
     if (mHeti == nullptr){
@@ -212,6 +264,7 @@ int WebEx::readRegister(uint8_t reg, int16_t * value){
 
     int success = 0;
 
+    // read single register
     success = mHeti->readSingleRegister(reg,value);
     if (success != HETI_OK){
         return -3;
@@ -220,12 +273,18 @@ int WebEx::readRegister(uint8_t reg, int16_t * value){
     return WEBEX_OK;
 }
 
+/*---------------------------------------------------------------------------
+ * Check a register against a specified value.
+ *--------------------------------------------------------------------------*/
 int WebEx::checkRegister(uint8_t reg,int16_t value){
 
     int success = mHeti->compareRegisterValue(reg,value,true);
     return success;
 }
 
+/*---------------------------------------------------------------------------
+ * Set or Reset Stepper Pin
+ *--------------------------------------------------------------------------*/
 int WebEx::setStepper(uint8_t stepNr,uint8_t const on){
 
     if (mHeti == nullptr){
@@ -239,6 +298,7 @@ int WebEx::setStepper(uint8_t stepNr,uint8_t const on){
     if (tmp ==0) tmp = 1;
 
 
+    // set pin (reg 9 - 13)
     success = mHeti->writeSingleRegister(8+tmp,on);
     if (success != HETI_OK){
         return -3;
@@ -247,7 +307,9 @@ int WebEx::setStepper(uint8_t stepNr,uint8_t const on){
     return WEBEX_OK;
 }
 
-
+/*---------------------------------------------------------------------------
+ * Read ADC value from WebEx
+ *--------------------------------------------------------------------------*/
 int WebEx::readADC(uint16_t * value){
 
     if (mHeti == nullptr){
@@ -256,6 +318,7 @@ int WebEx::readADC(uint16_t * value){
 
     int success = 0;
 
+    // read ADC (reg 17)
     success = mHeti->readSingleRegister(17,(int16_t *)value);
     if (success != HETI_OK){
         return -3;
@@ -264,6 +327,9 @@ int WebEx::readADC(uint16_t * value){
     return WEBEX_OK;
 }
 
+/*---------------------------------------------------------------------------
+ * Read Dip Switch
+ *--------------------------------------------------------------------------*/
 int WebEx::readDip(uint16_t * value){
 
     if (mHeti == nullptr){
@@ -272,6 +338,7 @@ int WebEx::readDip(uint16_t * value){
 
     int success = 0;
 
+    // read dip (reg 15)
     success = mHeti->readSingleRegister(15,(int16_t*)value);
     if (success != HETI_OK){
         return -3;

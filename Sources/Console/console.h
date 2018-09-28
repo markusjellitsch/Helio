@@ -1,3 +1,10 @@
+//------------------------------------------------------------------------
+// NAME         : console.h
+// AUTHOR       : Markus Jellitsch
+// DATE         : 6.10.2017
+// DESCRIPTION  : A class for handling argument list entered by a user.
+//                This class allows passes the argument list.
+// -----------------------------------------------------------------------
 
 #ifndef CONSOLE_H
 #define CONSOLE_H
@@ -13,7 +20,6 @@
 
 #define CONSOLE_NUM_ARGUMENTS           20
 #define CONSOLE_NUM_OPTIONS             20
-
 
 #define CONSOLE_RETURN_ON_SUCCESS(x)    \
 {                                       \

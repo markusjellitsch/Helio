@@ -9,10 +9,8 @@
 #include <string>
 #include <string.h>
 #include <helio.h>
-#include <cxxopts.hpp>
 
 using namespace std;
-using namespace cxxopts;
 
 #define TESTNAME "VTX Test"
 
@@ -22,31 +20,31 @@ using namespace cxxopts;
 int main(int argc, char *argv[])
 {
 
-  Options options("VTX Test","Testing Vortex of WebEx")
-
-  options.add_options()("v,verbose","Enable verbose mode");
-  auto result = options.parse(argc,argv);
-  if (result.count("verbose")>0){
-
-      cout << result["verbose"].as<string>() << endl;
-  }
-
     TestVTX vtxUnit;
     TestRunner runner;
     StdLogger logger;
 
+    Console console(argc,argv);
+    console.setAppDescription(TESTNAME);
+    console.addOption("v0","Verbose Level 0");
+    console.addOption("v1","Verbose Level 1");
+
+    // parse argument list
+    int success = console.parse();
+    if (success < 0){
+        console.showOptions();
+        return 0;
+    }
     bool verbose = false;
 
     // enable logging level0
-    if (argc ==2){
-        if (strcmp(argv[1],"-v0")==0){
-            verbose = true;
-        }
+    if (console.isOptionEntered("v0")){
+        verbose = true;
+    }
     // enable logging level1 (+more specific)
-    else if (strcmp(argv[1],"-v1")==0){
-            verbose = true;
-            HETI::getInstance()->setLogger(&logger);
-        }
+    else if (console.isOptionEntered("v1")){
+        verbose = true;
+        HETI::getInstance()->setLogger(&logger);
     }
 
     logger.setLoggingOption(true,verbose,true);
@@ -58,7 +56,7 @@ int main(int argc, char *argv[])
     // add the test
     runner.addTest(&vtxUnit,TESTNAME);
 
-    int success = 0;
+    success = 0;
 
     success = runner.runAllTests();
 

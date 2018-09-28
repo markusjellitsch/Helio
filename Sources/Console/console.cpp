@@ -126,7 +126,9 @@ int Console::addOption(std::string const & keyword, std::string const &  descrip
     return CONSOLE_OK;
 }
 
-
+/* -----------------------------------------
+ Return if a Option was entered by the user
+-------------------------------------------*/
 int Console::isOptionEntered(string const & keyword){
 
     for (int i = 0; i<mNumOtions;i++){
@@ -138,6 +140,9 @@ int Console::isOptionEntered(string const & keyword){
     return -1;
 }
 
+/* -----------------------------------------
+ Return the value of an Option if the user has entered
+-------------------------------------------*/
 std::string Console::getOptionValue(std::string const & keyword){
       for (int i=0;i<mNumOtions;i++){
           if (mOptionList[i].keyword == keyword){
@@ -150,6 +155,10 @@ std::string Console::getOptionValue(std::string const & keyword){
       return "";
 }
 
+/* -----------------------------------------
+ Parse argument list and check if option have
+ been entered. Return number of valid options
+-------------------------------------------*/
 int Console::parse(){
 
     int count = 0;
@@ -160,11 +169,14 @@ int Console::parse(){
             mOptionList[i].position = indexOption;
     }
 
-    if (count > 0) return count;
 
-    return CONSOLE_ERROR_INVALID_OPTION;
+    return count;
 }
 
+/* -----------------------------------------
+ Check if option was entered (valid) and
+ call the dispatchHandler.
+-------------------------------------------*/
 int Console::dispatch(std::string keyword, fpDispatch_t dispatchHandler){
 
    // check if option was entered by user
@@ -184,6 +196,9 @@ int Console::dispatch(std::string keyword, fpDispatch_t dispatchHandler){
    return dispatchHandler(value);
 }
 
+/* -----------------------------------------
+ Dump all entries in the argument list
+-------------------------------------------*/
 int Console::dumpArgList(){
 
     cout << "Num Args:" << mArgc << endl;
@@ -202,6 +217,9 @@ int Console::dumpArgList(){
     return CONSOLE_OK;
 }
 
+/* -----------------------------------------
+ Dump all entries in the option list
+-------------------------------------------*/
 int Console::dumpOptionList(){
 
     cout << "Num Options:" << mNumOtions << endl;
@@ -220,7 +238,9 @@ int Console::dumpOptionList(){
     return CONSOLE_OK;
 }
 
-// print Options to the screen (for user information)
+/* -----------------------------------------
+ Show  available Options on stdout
+-------------------------------------------*/
 int Console::showOptions(){
 
     cout << endl;
@@ -241,8 +261,12 @@ int Console::showOptions(){
     return CONSOLE_OK;
 }
 
+/* -----------------------------------------
+ Set a name for the application
+-------------------------------------------*/
 int Console::setAppDescription(string const & description){
     mDescription  = description;
+    return CONSOLE_OK;
 }
 
 

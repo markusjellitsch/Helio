@@ -5,17 +5,17 @@
 // DESCRIPTION  : test harness for FU (= Frequenzumrichter)
 // -----------------------------------------------------------------------
 
-#ifndef test_pwm_H
-#define test_pwm_H
+#ifndef TEST_PWM_H
+#define TEST_PWM_H
 
 #include <TestUnit/test_unit.h>
 
-class PWMTest : public TestUnit
+class TestPWM : public TestUnit
 {
 public:
 
-    PWMTest()=default;
-    virtual ~PWMTest()=default;
+    TestPWM()=default;
+    virtual ~TestPWM()=default;
 
 protected:
 
