@@ -45,6 +45,7 @@ int main(int argc, char *argv[])
     else if (console.isOptionEntered("v1")){
         verbose = true;
         HETI::getInstance()->setLogger(&logger);
+        RTU::getInstance()->setLogger(&logger);
     }
 
     logger.setLoggingOption(true,verbose,true);

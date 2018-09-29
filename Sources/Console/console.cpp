@@ -129,15 +129,15 @@ int Console::addOption(std::string const & keyword, std::string const &  descrip
 /* -----------------------------------------
  Return if a Option was entered by the user
 -------------------------------------------*/
-int Console::isOptionEntered(string const & keyword){
+bool Console::isOptionEntered(string const & keyword){
 
     for (int i = 0; i<mNumOtions;i++){
         if (mOptionList[i].keyword == keyword && mOptionList[i].position > 0){
-            return CONSOLE_OK;
+            return true;
         }
     }
 
-    return -1;
+    return false;
 }
 
 /* -----------------------------------------

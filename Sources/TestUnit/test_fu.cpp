@@ -6,13 +6,9 @@
 // -----------------------------------------------------------------------
 
 #include "test_fu.h"
-
-// use HETI
-#include "Heti/heti.h"
-
-// use RTU
-//#include "RTU/rtu.h"
-
+#include <string>
+#include <iostream>
+#include <helio.h>
 
 using namespace std;
 
@@ -23,15 +19,15 @@ int TestFU::doSetup(){
 
     // open the interface
     TESTASSERT(HETI::getInstance()->open(),"Connect to Heti");
-    return TEST_OK;
-}
 
-// -----------------------------------
-// tear down hook to be implemented
-// -----------------------------------
-int TestFU::doTearDown(){
+    if (!mTestParameters.valid){
+      mTestParameters.param1 = 10;  // cnt writes to reg1
+      mTestParameters.param2 = 0;   //
+      mTestParameters.param3 = 0;   //
+      mTestParameters.param4 = 0;
+      mTestParameters.param5 = 0;
+    }
 
-    TESTASSERT(HETI::getInstance()->releaseInstance(),"Close Heti");
     return TEST_OK;
 }
 
@@ -48,11 +44,24 @@ int TestFU::doRunTest(){
     // Compare register
     TESTASSERT(HETI::getInstance()->compareRegisterValue(21,1,true),"Holding Reg 21=1");
 
-    // Write holding register
-    TESTASSERT(HETI::getInstance()->writeSingleRegister(1,2),"Write Holding 1 val=2");
+    // loop
+    for (int i=0;i<mTestParameters.param1;i++){
 
-    // read back holding reg 2
-    TESTASSERT(HETI::getInstance()->compareRegisterValue(1,2,true),"Holding Reg 1=2");
+        // Write holding register
+        TESTASSERT(HETI::getInstance()->writeSingleRegister(1,2),"Write Holding 1 val=2");
 
+        // read back holding reg 2
+        TESTASSERT(HETI::getInstance()->compareRegisterValue(1,2,true),"Holding Reg 1=2");
+    }
+
+    return TEST_OK;
+}
+
+// -----------------------------------
+// tear down hook to be implemented
+// -----------------------------------
+int TestFU::doTearDown(){
+
+    TESTASSERT(HETI::getInstance()->releaseInstance(),"Close Heti");
     return TEST_OK;
 }

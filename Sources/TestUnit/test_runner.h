@@ -43,6 +43,9 @@ public:
     // set the logger for logging info
     int setLogger(Logger * logger);
 
+    // set the .ini config file to be read by the Test Unit
+    int setConfigFile(std::string fileName);
+
 protected:
 
     // log errors
@@ -51,6 +54,8 @@ protected:
     Logger * mLogger = nullptr;
 
     std::vector<TestUnit*> mTestList;
+
+    std::string mConfigFileName="";
 };
 
 #endif

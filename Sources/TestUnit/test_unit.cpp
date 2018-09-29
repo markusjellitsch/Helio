@@ -2,7 +2,7 @@
 // NAME         : test_unit.cpp
 // AUTHOR       : Markus Jellitsch
 // DATE         : 6.10.2017
-// DESCRIPTION  : test unit base class
+// DESCRIPTION  : test unit base class providing neceessary funciton
 // -----------------------------------------------------------------------
 
 #include "test_unit.h"
@@ -12,8 +12,7 @@
 #include <string>
 #include <sstream>
 #include <stdio.h>
-
-
+#include <QSettings>
 
 using namespace std;
 
@@ -21,6 +20,8 @@ using namespace std;
 // constructor
 // ------------------------------------
  TestUnit::TestUnit(){
+    memset(&mTestParameters,sizeof(TestParameterList_t),0);
+    mTestParameters.valid = 0;
     mTestName = "Unknown Test Name";
     mLogger = nullptr;
  }
@@ -150,12 +151,88 @@ int TestUnit::assertHandler(int errorCode,string const & file, int line){
     text.append(file);
     text.append(" IN LINE ");
     text.append(to_string(line));
-    text.append(".ERROR CODE:"+ errorCode);
+    text.append(".ERROR CODE:");
+    text.append(to_string(errorCode));
     log(TEST_SEVERITY_ERROR,text);
 
     return TEST_OK;
 }
 
+// -----------------------------------
+// Parse the .ini file
+// -----------------------------------
+int TestUnit::useIniFile(std::string const & fileName){
+
+    // open config file
+    QSettings configuration(QString::fromStdString(fileName),QSettings::IniFormat);
+    configuration.beginGroup(QString::fromStdString(mTestName));
+
+    QString param = "";
+
+    TestParameterList_t paramList;
+
+    // reset test parameters
+    mTestParameters.valid = 0;
+    mTestParameters.param1 = 0;
+    mTestParameters.param2 = 0;
+    mTestParameters.param3 = 0;
+    mTestParameters.param4 = 0;
+    mTestParameters.param5 = 0;
+
+    // read param 1
+    param = configuration.value("param1","undef").toString();
+    if (param == "undef"){
+        configuration.endGroup();
+        return TEST_ERROR_INVALID_CONFIG;
+    }
+    paramList.param1 = param.toInt();
+
+    // read param 2
+    param = configuration.value("param2","undef").toString();
+    if (param == "undef"){
+        configuration.endGroup();
+        return TEST_ERROR_INVALID_CONFIG;
+    }
+    paramList.param2 = param.toInt();
+
+    // read param 3
+    param = configuration.value("param3","undef").toString();
+    if (param == "undef"){
+        configuration.endGroup();
+        return TEST_ERROR_INVALID_CONFIG;
+    }
+    paramList.param3 = param.toInt();
+
+    // read param 4
+    param = configuration.value("param4","undef").toString();
+    if (param == "undef"){
+        configuration.endGroup();
+        return TEST_ERROR_INVALID_CONFIG;
+    }
+    paramList.param4 = param.toInt();
+
+    // read param 5
+    param = configuration.value("param5","undef").toString();
+    if (param == "undef"){
+        configuration.endGroup();
+        return TEST_ERROR_INVALID_CONFIG;
+    }
+    paramList.param5 = param.toInt();
+
+    // accept parameters
+    mTestParameters = paramList;
+
+    // set valid
+    mTestParameters.valid = 1;
+
+    configuration.endGroup();
+
+    return TEST_OK;
+}
+
+// -----------------------------------
+// Read line from stdint
+// -----------------------------------
 std::string TestUnit::readStdin(){
 
     string str= "";
@@ -165,6 +242,9 @@ std::string TestUnit::readStdin(){
     return str;
 }
 
+// -----------------------------------
+// write to stdou
+// -----------------------------------
 int TestUnit::writeStdOut(std::string const &str,bool newline){
 
     cout << mTestName << ": " << str;
@@ -173,6 +253,9 @@ int TestUnit::writeStdOut(std::string const &str,bool newline){
     return TEST_OK;
 }
 
+// -----------------------------------
+// Ask user for input
+// -----------------------------------
 int TestUnit::checkYesNo(std::string const & text){
 
     writeStdOut(text,false);

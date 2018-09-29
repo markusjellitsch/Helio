@@ -39,6 +39,15 @@ int TestRunner::addTest(TestUnit * test,string const & testName){
 }
 
 // --------------------------------
+// Set .Ini Config File to be read
+// --------------------------------
+int TestRunner::setConfigFile(std::string fileName){
+    mConfigFileName = fileName;
+
+    return TEST_OK;
+}
+
+// --------------------------------
 // run a specific test
 // --------------------------------
 int TestRunner::runTest(unsigned int const testNr){
@@ -53,6 +62,15 @@ int TestRunner::runTest(unsigned int const testNr){
 
         string testName = mTestList[testNr]->getTestName();
         log(TEST_SEVERITY_MESSAGE,"Run Test "+testName);
+
+        // read config file (.ini) when set
+        if (mConfigFileName != ""){
+            success = mTestList[testNr]->useIniFile(mConfigFileName);
+            // don't exit just log
+            if (success != TEST_OK) log(TEST_SEVERITY_MESSAGE,"No arguments read in .ini file");
+            else log(TEST_SEVERITY_MESSAGE,"Succesfully read .ini file parameters");
+        }
+
         // setup test
         success = mTestList[testNr]->setup();
         TESTRUNASSERT(success);
@@ -125,4 +143,7 @@ int TestRunner::log(uint8_t const logLevel, std::string const & text){
 
     return TEST_OK;
 }
+
+
+
 

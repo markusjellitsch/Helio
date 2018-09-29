@@ -22,6 +22,7 @@
 #define RTU_NUM_HOLDING_REGISTER    20
 
 #define RTU_SYS_BOOT_SEQUENCE       0x4711
+#define RTU_CNT_SAMPLE_RATE         100  // us
 
 #define RTU_DRY_TIMEOUT_MS          10
 
@@ -54,10 +55,13 @@
 #define RTU_DAC_BASE                (MODBUS_HOLDING_REG_4020)
 #define RTU_DAC_VOL                 (RTU_DAC_BASE)
 
+#define RTU_SYS_EN_PWM_Msk          (0x0F << 0)
 #define RTU_SYS_EN_PWM1_Msk         (0x01 << 0)
 #define RTU_SYS_EN_PWM2_Msk         (0x01 << 1)
 #define RTU_SYS_EN_PWM3_Msk         (0x01 << 2)
 #define RTU_SYS_EN_PWM4_Msk         (0x01 << 3)
+
+#define RTU_SYS_EN_CNT_Msk          (0x0F << 4)
 #define RTU_SYS_EN_CNT1_Msk         (0x01 << 4)
 #define RTU_SYS_EN_CNT2_Msk         (0x01 << 5)
 #define RTU_SYS_EN_CNT3_Msk         (0x01 << 6)

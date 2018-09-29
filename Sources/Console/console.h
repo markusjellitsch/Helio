@@ -56,7 +56,7 @@ public:
     int addOption(std::string const & keyword, std::string const & desctiption);
 
     // check options - return option value
-    int isOptionEntered(std::string const & keyword);
+    bool isOptionEntered(std::string const & keyword);
     std::string getOptionValue(std::string const & keyword);
 
     // parse arguments

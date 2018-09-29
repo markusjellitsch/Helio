@@ -733,7 +733,8 @@ int RTU::compareZero(uint8_t const reg, uint16_t const bit){
     error = writeSingleRegister(RTU_PWM_DUT,(uint16_t)duty);
     RTUASSERT(error);
 
-    error = setBit(RTU_SYS_EN,channel);
+    uint8_t tmp = channel & RTU_SYS_EN_PWM_Msk;
+    error = setBit(RTU_SYS_EN,tmp);
     RTUASSERT(error);
 
     error = setBit(RTU_PWM_CR,0);
@@ -759,7 +760,8 @@ int RTU::compareZero(uint8_t const reg, uint16_t const bit){
   * Stop PWM singnal of a specified channel
   *--------------------------------------------------------------------------*/
  int RTU::stopPWM(uint8_t const channel){
-    return clearBit(RTU_SYS_EN,channel);
+     uint8_t tmp = channel & RTU_SYS_EN_PWM_Msk;
+     return clearBit(RTU_SYS_EN,tmp);
  }
 
 
@@ -817,7 +819,8 @@ int RTU::compareZero(uint8_t const reg, uint16_t const bit){
 
 int RTU::startCapture(uint8_t const channel){
 
-    int error = setBit(RTU_SYS_EN,channel);
+    uint8_t tmp = channel & RTU_SYS_EN_CNT_Msk;
+    int error = setBit(RTU_SYS_EN,tmp);
     RTUASSERT(error);
 
     error = compareSet(RTU_SYS_EN,channel);
@@ -828,7 +831,8 @@ int RTU::startCapture(uint8_t const channel){
 
 int RTU::stopCapture(uint8_t const channel){
 
-    int error = clearBit(RTU_SYS_EN,channel);
+    uint8_t tmp = channel & RTU_SYS_EN_CNT_Msk;
+    int error = clearBit(RTU_SYS_EN,tmp);
     RTUASSERT(error);
 
     return RTU_OK;
@@ -865,7 +869,7 @@ int RTU::getFrequency(uint8_t const channel,uint16_t * value){
     RTUASSERT(error);
 
     // calculate frequency
-    *value = period;
+    *value = period * RTU_CNT_SAMPLE_RATE;
     return RTU_OK;
 }
 

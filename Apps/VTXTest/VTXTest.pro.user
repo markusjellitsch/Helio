@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.0.2, 2018-09-20T20:08:49. -->
+<!-- Written by QtCreator 4.0.2, 2018-09-29T00:16:51. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -269,10 +269,12 @@
       <valuelist type="QVariantList" key="Qt4ProjectManager.MaemoRunConfiguration.LastDeployedFiles">
        <value type="QString">/home/user/RPI_COM/Apps/build-FuTest-Raspberry_Pi_2_Qt_5_7_0-Debug/heti_test</value>
        <value type="QString">/home/user/RPI_COM/Apps/build-FuTest-Raspberry_Pi_2_Qt_5_7_0-Debug/rgb_test</value>
+       <value type="QString">/home/user/RPI_COM/Apps/build-FuTest-Raspberry_Pi_2_Qt_5_7_0-Debug/vtx_test</value>
        <value type="QString">/home/user/RPI_COM/Apps/build-FuTest-Raspberry_Pi_2_Qt_5_7_0-Debug/heti_test</value>
       </valuelist>
       <valuelist type="QVariantList" key="Qt4ProjectManager.MaemoRunConfiguration.LastDeployedHosts">
        <value type="QString">192.168.1.109</value>
+       <value type="QString">192.168.0.53</value>
        <value type="QString">192.168.0.53</value>
        <value type="QString">192.168.0.53</value>
       </valuelist>
@@ -280,8 +282,10 @@
        <value type="QString">/home/pi/Application</value>
        <value type="QString">/home/pi/HelioTests</value>
        <value type="QString">/home/pi/HelioTests</value>
+       <value type="QString">/home/pi/HelioTests</value>
       </valuelist>
       <valuelist type="QVariantList" key="Qt4ProjectManager.MaemoRunConfiguration.LastDeployedSysroots">
+       <value type="QString">/home/user/raspi/sysroot</value>
        <value type="QString">/home/user/raspi/sysroot</value>
        <value type="QString">/home/user/raspi/sysroot</value>
        <value type="QString">/home/user/raspi/sysroot</value>
@@ -289,6 +293,7 @@
       <valuelist type="QVariantList" key="Qt4ProjectManager.MaemoRunConfiguration.LastDeployedTimes">
        <value type="QDateTime">2018-08-15T12:01:14</value>
        <value type="QDateTime">2018-09-15T00:23:16</value>
+       <value type="QDateTime">2018-09-28T21:28:41</value>
        <value type="QDateTime">2018-09-13T22:40:12</value>
       </valuelist>
       <value type="bool" key="RemoteLinux.GenericDirectUploadStep.IgnoreMissingFiles">false</value>
@@ -359,7 +364,7 @@
     <value type="uint" key="RunConfiguration.QmlDebugServerPort">3768</value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">true</value>
-    <value type="bool" key="RunConfiguration.UseMultiProcess">false</value>
+    <value type="bool" key="RunConfiguration.UseMultiProcess">true</value>
     <value type="bool" key="RunConfiguration.UseQmlDebugger">false</value>
     <value type="bool" key="RunConfiguration.UseQmlDebuggerAuto">true</value>
    </valuemap>

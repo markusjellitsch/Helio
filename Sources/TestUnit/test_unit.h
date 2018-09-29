@@ -19,6 +19,7 @@
 #define TEST_ERROR_TEARDOWN         -2
 #define TEST_ERROR_RUNTEST          -3
 #define TEST_ERROR_NULLPTR          -4
+#define TEST_ERROR_INVALID_CONFIG   -5
 
 #define TEST_SEVERITY_ERROR          0
 #define TEST_SEVERITY_MESSAGE        1
@@ -47,6 +48,16 @@
     }                                                                           \
 }
 
+// test parameters read from .ini file
+struct TestParameterList_t{
+    int32_t param1;
+    int32_t param2;
+    int32_t param3;
+    int32_t param4;
+    int32_t param5;
+    uint8_t valid;
+};
+
 class TestUnit
 {
 public:
@@ -70,6 +81,8 @@ public:
     int setTestName(std::string const & name);
     std::string getTestName();
 
+    // use .iniFile
+    int useIniFile(std::string const & fileName);
 
 protected:
 
@@ -83,14 +96,20 @@ protected:
     int writeStdOut(std::string const & text,bool newline=true);
     int checkYesNo(std::string const & text);
 
+    // return test parameter list
+    TestParameterList_t getTestParameterList();
+
     // hooks to be implemented
     virtual int doSetup()=0;
     virtual int doTearDown()= 0;
     virtual int doRunTest() = 0;
 
+
     // variables
     std::string mTestName;
     Logger * mLogger = nullptr;
+
+    TestParameterList_t mTestParameters;
 };
 
 #endif
